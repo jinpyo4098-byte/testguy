@@ -1,11 +1,11 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# Streamlit 페이지 기본 설정 (넓은 화면 사용)
-st.set_page_config(layout="wide", page_title="Gravity Arrow")
+# 스트림릿 페이지 설정
+st.set_page_config(page_title="Gravity Arrow", layout="wide")
 
-# HTML/JS/CSS 통합 게임 코드
-html_game_code = """
+# 게임 HTML/CSS/JavaScript 코드
+game_html = """
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -13,474 +13,577 @@ html_game_code = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gravity Arrow</title>
     <style>
+        /* 우주적인 디자인 컨셉 (Cosmic Theme) */
         body {
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            background: radial-gradient(circle, #1b2735 0%, #090a0f 100%);
+            color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-            /* 기본 지구 지표면 느낌의 배경 (하늘 60%, 땅 40%) */
-            background: linear-gradient(to bottom, #87CEEB 60%, #228B22 60%);
-            transition: background 0.5s ease;
-        }
-
-        /* 메인 타이틀 및 Start 버튼 (중앙) */
-        #main-menu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 10;
-        }
-        #main-menu h1 {
-            font-size: 5rem;
-            color: white;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
-            margin: 0 0 20px 0;
-        }
-        #start-btn {
-            padding: 15px 50px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.1s;
-        }
-        #start-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* 좌측 상단 행성 버튼 5개 */
-        #planet-buttons {
-            position: absolute;
-            top: 20px;
-            left: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            z-index: 10;
-        }
-        .planet-btn {
-            padding: 10px;
-            font-size: 1rem;
-            font-weight: bold;
-            background-color: rgba(255, 255, 255, 0.8);
-            border: 2px solid #333;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .planet-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .planet-btn.active {
-            background-color: #333;
-            color: white;
-            border-color: white;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
         }
 
-        /* 우측 상단 최고 기록 */
-        #high-score-box {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.6);
+        #game-container {
+            position: relative;
+            width: 800px;
+            margin-top: 10px;
+        }
+
+        /* 배경 이미지 교체를 위한 스타일 힌트 */
+        #game-canvas {
+            border: 2px solid #4a5568;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+            background-color: rgba(0, 0, 0, 0.4);
+            /* 배경 사진을 추가하려면 아래 주석을 해제하고 경로를 넣으세요 */
+            /* background-image: url('YOUR_PLANET_BACKGROUND_URL'); */
+            /* background-size: cover; */
+            cursor: crosshair;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 5px 0;
+            text-shadow: 0 0 10px #00d2ff;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .ui-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 800px;
+            background: rgba(255, 255, 255, 0.1);
             padding: 10px 20px;
             border-radius: 8px;
-            z-index: 10;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            backdrop-filter: blur(5px);
         }
 
-        /* 게임 중 상단 중앙 스탯 표시 (점수, 시간, 중력) */
-        #game-stats {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 30px;
-            font-size: 1.5rem;
+        .stats {
+            font-size: 1.1rem;
             font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 30px;
-            border-radius: 8px;
-            z-index: 10;
-            visibility: hidden; /* 시작 전엔 숨김 */
-        }
-        .stat-highlight {
-            color: #ffeb3b;
         }
 
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
+        .btn {
+            background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
         }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 132, 255, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* 행성 선택 스타일 */
+        .planet-selector {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .planet-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .planet-circle:hover {
+            transform: scale(1.1);
+        }
+
+        .planet-circle.active {
+            border-color: #fff;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        /* 각 행성별 임시 구체 디자인 (추후 사진 대체 가능) */
+        #planet-earth { background: radial-gradient(circle at 30% 30%, #2b82c9, #053057); color: #00d2ff; }
+        #planet-moon { background: radial-gradient(circle at 30% 30%, #ccc, #666); color: #ddd; }
+        #planet-mars { background: radial-gradient(circle at 30% 30%, #e03e1d, #5c1303); color: #ff6b6b; }
+        #planet-venus { background: radial-gradient(circle at 30% 30%, #e3a857, #6d3e00); color: #ffd166; }
+        #planet-europa { background: radial-gradient(circle at 30% 30%, #a5cad6, #3a5d6b); color: #98e1f5; }
     </style>
 </head>
 <body>
 
-    <div id="planet-buttons">
-        <button class="planet-btn active" data-idx="0">지구</button>
-        <button class="planet-btn" data-idx="1">달</button>
-        <button class="planet-btn" data-idx="2">화성</button>
-        <button class="planet-btn" data-idx="3">금성</button>
-        <button class="planet-btn" data-idx="4">유로파</button>
-    </div>
-
-    <div id="main-menu">
+    <div class="header">
         <h1>Gravity Arrow</h1>
-        <button id="start-btn">Start</button>
+        <button class="btn" id="start-btn" onclick="startGame()">Start Game</button>
     </div>
 
-    <div id="high-score-box">
-        최고 기록: <span id="high-score-val">0</span>
+    <div class="ui-panel">
+        <div class="stats">
+            시간: <span id="time-disp">15</span>s | 
+            중력: <span id="gravity-disp">9.8</span> $m/s^2$ | 
+            점수: <span id="score-disp">0</span> | 
+            최고기록: <span id="high-disp">0</span>
+        </div>
+        
+        <div class="planet-selector">
+            <button class="btn" onclick="cyclePlanet()">Change</button>
+            <div id="planet-earth" class="planet-circle active" onclick="selectPlanet('earth')">지구</div>
+            <div id="planet-moon" class="planet-circle" onclick="selectPlanet('moon')">달</div>
+            <div id="planet-mars" class="planet-circle" onclick="selectPlanet('mars')">화성</div>
+            <div id="planet-venus" class="planet-circle" onclick="selectPlanet('venus') font-size: 0.65rem;">금성</div>
+            <div id="planet-europa" class="planet-circle" onclick="selectPlanet('europa')">유로파</div>
+        </div>
     </div>
 
-    <div id="game-stats">
-        <div>시간: <span id="time-val" class="stat-highlight">15</span>초</div>
-        <div>점수: <span id="score-val" class="stat-highlight">0</span>점</div>
-        <div>중력: <span id="gravity-val" class="stat-highlight">9.8</span> m/s²</div>
+    <div id="game-container">
+        <canvas id="game-canvas" width="800" height="450"></canvas>
     </div>
-
-    <canvas id="gameCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
-        
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            target.baseY = canvas.height * 0.4; // 과녁을 하늘 쪽에 배치
-            bow.y = canvas.height * 0.55; // 활을 지표면 근처에 배치
-            target.x = canvas.width - 200;
-        }
-        window.addEventListener('resize', resizeCanvas);
 
-        // 3-6. 행성 데이터 (지표면 느낌의 linear-gradient 배경)
-        const planets = [
-            { name: '지구', gravity: 9.8, bg: 'linear-gradient(to bottom, #87CEEB 60%, #228B22 60%)' },
-            { name: '달',   gravity: 1.6, bg: 'linear-gradient(to bottom, #050505 60%, #555555 60%)' },
-            { name: '화성', gravity: 3.7, bg: 'linear-gradient(to bottom, #c08060 60%, #8b4513 60%)' },
-            { name: '금성', gravity: 8.9, bg: 'linear-gradient(to bottom, #d4a373 60%, #a0522d 60%)' },
-            { name: '유로파', gravity: 1.3, bg: 'linear-gradient(to bottom, #0a192f 60%, #b2ebf2 60%)' }
-        ];
+        // 행성 데이터 (중력값 m/s^2 공식 반영 및 물리 스케일링)
+        const planets = {
+            earth: { name: '지구', gravity: 9.8, color: '#2b82c9' },
+            moon: { name: '달', gravity: 1.6, color: '#ccc' },
+            mars: { name: '화성', gravity: 3.7, color: '#e03e1d' },
+            venus: { name: '금성', gravity: 8.9, color: '#e3a857' },
+            europa: { name: '유로파', gravity: 1.3, color: '#a5cad6' }
+        };
+        const planetKeys = ['earth', 'moon', 'mars', 'venus', 'europa'];
+        let currentPlanetKey = 'earth';
 
-        let currentPlanetIdx = 0;
+        // 게임 변수
         let score = 0;
-        let highScore = 0;
+        let highScore = localStorage.getItem('gravity_arrow_high') || 0;
         let timeLeft = 15;
-        let isPlaying = false;
-        let gameTimer = null;
+        let gameActive = false;
+        let gameInterval;
+        let timerInterval;
 
-        // 물리, 오브젝트 변수
-        const bow = { x: 150, y: 0 };
+        // 물리 환경 변수
+        let gravityScale = 0.03; // 화면 해상도에 맞춘 중력 스케일 계수
+        let currentGravity = planets[currentPlanetKey].gravity * gravityScale;
+
+        // 과녁 변수 (위아래 이동)
+        let target = {
+            x: 720,
+            y: 225,
+            radiusD: 50, // 1점
+            radiusC: 35, // 2점
+            radiusB: 20, // 5점
+            radiusA: 8,  // 10점 (작음)
+            speed: 1.5,
+            dir: 1
+        };
+        
+        // 활 및 화살 변수
+        const bowPos = { x: 80, y: 225 };
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
-        let dragCurrent = { x: 0, y: 0 };
+        let dragEnd = { x: 0, y: 0 };
         
-        let arrows = [];
-        let nextIsApple = false;
-        let appleTimer = 0; // 사과 화살 점선 1초 변경 타이머
-        let globalTime = 0; // 1초 계산을 위한 누적 시간
+        let activeArrows = [];
+        let currentArrow = { isApple: false };
+        
+        // 애플 화살 관련 팅김 타이머
+        let appleTimer = 0;
+        let appleTrajectoryVisible = true;
 
-        // 과녁 데이터 (A:10, B:5, C:2, D:1)
-        const target = {
-            x: 0, y: 0, baseY: 0,
-            direction: 1, 
-            speed: 1.5,
-            dirTimer: 0, // 5초 방향 전환용
-            rings: [
-                { name: 'D', r: 80, score: 1, color: '#ffffff' },
-                { name: 'C', r: 55, score: 2, color: '#03a9f4' },
-                { name: 'B', r: 30, score: 5, color: '#f44336' },
-                { name: 'A', r: 12, score: 10, color: '#ffeb3b' }
-            ]
-        };
+        // 최고 기록 초기 초기화
+        document.getElementById('high-disp').innerText = highScore;
 
-        // UI 요소
-        const planetBtns = document.querySelectorAll('.planet-btn');
-        const startBtn = document.getElementById('start-btn');
-        const mainMenu = document.getElementById('main-menu');
-        const gameStats = document.getElementById('game-stats');
-        const scoreVal = document.getElementById('score-val');
-        const timeVal = document.getElementById('time-val');
-        const gravityVal = document.getElementById('gravity-val');
-        const highScoreVal = document.getElementById('high-score-val');
-
-        // 초기 세팅
-        resizeCanvas();
-
-        // 행성 선택 이벤트
-        planetBtns.forEach((btn, idx) => {
-            btn.addEventListener('click', () => {
-                if (isPlaying) return; // 3-3. 게임 시작되면 배경 못 바꿈
-                
-                currentPlanetIdx = idx;
-                document.body.style.background = planets[idx].bg;
-                gravityVal.textContent = planets[idx].gravity.toFixed(1);
-                
-                planetBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+        // 행성 선택 함수
+        function selectPlanet(key) {
+            currentPlanetKey = key;
+            planetKeys.forEach(k => {
+                document.getElementById(`planet-${k}`).classList.remove('active');
             });
-        });
+            document.getElementById(`planet-${key}`).classList.add('active');
+            
+            // 중력 표기 (소수점 1자리)
+            document.getElementById('gravity-disp').innerText = planets[key].gravity.toFixed(1);
+            currentGravity = planets[key].gravity * gravityScale;
+            
+            // 행성별 배경 교체용 커스텀 이벤트나 스타일 처리를 여기에 추가할 수 있습니다.
+            generateStars(); 
+        }
 
-        // 게임 시작 이벤트
-        startBtn.addEventListener('click', () => {
-            isPlaying = true;
+        // Change 버튼 클릭 시 순환
+        function cyclePlanet() {
+            let idx = planetKeys.indexOf(currentPlanetKey);
+            idx = (idx + 1) % planetKeys.length;
+            selectPlanet(planetKeys[idx]);
+        }
+
+        // 게임 시작
+        function startGame() {
+            if(gameActive) return;
             score = 0;
             timeLeft = 15;
-            arrows = [];
-            target.y = target.baseY;
-            target.dirTimer = 0;
-            
-            scoreVal.textContent = score;
-            timeVal.textContent = timeLeft;
-            
-            mainMenu.style.display = 'none';
-            gameStats.style.visibility = 'visible';
-            
-            // 행성 버튼 비활성화
-            planetBtns.forEach(btn => btn.disabled = true);
-            
-            checkAppleArrow();
+            gameActive = true;
+            activeArrows = [];
+            rollNextArrow();
 
-            gameTimer = setInterval(() => {
+            document.getElementById('score-disp').innerText = score;
+            document.getElementById('time-disp').innerText = timeLeft;
+            document.getElementById('start-btn').innerText = "게임 진행 중";
+            document.getElementById('start-btn').disabled = true;
+
+            // 과녁 방향 전환 타이머 (5초마다)
+            let targetDirInterval = setInterval(() => {
+                if(!gameActive) clearInterval(targetDirInterval);
+                target.dir *= -1;
+            }, 5000);
+
+            // 1초 단위 타이머
+            timerInterval = setInterval(() => {
                 timeLeft--;
-                timeVal.textContent = timeLeft;
-                if (timeLeft <= 0) endGame();
+                document.getElementById('time-disp').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    endGame();
+                }
             }, 1000);
-        });
 
+            // 루프 시작
+            gameInterval = requestAnimationFrame(update);
+        }
+
+        // 게임 종료
         function endGame() {
-            isPlaying = false;
-            clearInterval(gameTimer);
-            if (score > highScore) {
-                highScore = score;
-                highScoreVal.textContent = highScore;
-            }
-            alert(`게임 종료! 점수: ${score}점`);
+            gameActive = false;
+            cancelAnimationFrame(gameInterval);
+            clearInterval(timerInterval);
             
-            mainMenu.style.display = 'block';
-            gameStats.style.visibility = 'hidden';
-            planetBtns.forEach(btn => btn.disabled = false); // 행성 버튼 다시 활성화
+            if(score > highScore) {
+                highScore = score;
+                localStorage.setItem('gravity_arrow_high', highScore);
+                document.getElementById('high-disp').innerText = highScore;
+                alert(`축하합니다! 최고기록 달성: ${score}점`);
+            } else {
+                alert(`게임 종료! 최종 점수: ${score}점`);
+            }
+
+            document.getElementById('start-btn').innerText = "Start Game";
+            document.getElementById('start-btn').disabled = false;
         }
 
-        // 4-6. 1/20 확률 사과 화살
-        function checkAppleArrow() {
-            nextIsApple = Math.random() < 0.05; 
+        // 1/20 확률의 사과 화살 결정
+        function rollNextArrow() {
+            currentArrow = {
+                isApple: Math.random() < 0.05 // 20분의 1 확률
+            };
+            appleTimer = 0;
+            appleTrajectoryVisible = true;
         }
 
-        // 조작 이벤트
-        window.addEventListener('mousedown', (e) => {
-            if (!isPlaying) return;
-            let dist = Math.hypot(e.clientX - bow.x, e.clientY - bow.y);
-            if (dist < 80) {
+        // 마우스 및 드래그 이벤트 처리 (Angry Birds 방식 포물선)
+        canvas.addEventListener('mousedown', (e) => {
+            if(!gameActive) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 활 근처에서 드래그 시작할 수 있도록 세팅
+            if(Math.hypot(mouseX - bowPos.x, mouseY - bowPos.y) < 60) {
                 isDragging = true;
-                dragStart = { x: bow.x, y: bow.y };
-                dragCurrent = { x: e.clientX, y: e.clientY };
+                dragStart = { x: bowPos.x, y: bowPos.y };
+                dragEnd = { x: mouseX, y: mouseY };
             }
         });
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) dragCurrent = { x: e.clientX, y: e.clientY };
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            dragEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
         });
-        window.addEventListener('mouseup', () => {
+
+        canvas.addEventListener('mouseup', (e) => {
             if (!isDragging) return;
             isDragging = false;
 
-            let dx = dragStart.x - dragCurrent.x;
-            let dy = dragStart.y - dragCurrent.y;
+            // 잡아당긴 벡터 계산 (반대 방향으로 발사)
+            const dx = dragStart.x - dragEnd.x;
+            const dy = dragStart.y - dragEnd.y;
             
-            // 4-2. 기본 속도 5, 화살이므로 조금 빠른 척도 적용
-            let power = Math.hypot(dx, dy) * 0.15; 
-            let angle = Math.atan2(dy, dx);
+            // 발사 속도 기본 물리 척도 설정 (유저 조건: 기본속도 기반 빠른 연출)
+            const speedScale = 0.25; 
+            const vx = dx * speedScale;
+            const vy = dy * speedScale;
 
-            if (power > 1) { 
-                arrows.push({
-                    x: bow.x, y: bow.y,
-                    vx: Math.cos(angle) * (5 + power),
-                    vy: Math.sin(angle) * (5 + power),
-                    isApple: nextIsApple,
-                    hit: false
+            // 화살이 너무 제자리에 떨어지거나 뒤로 가지 않게 최소 앞방향 추진력 제한
+            if(vx > 2) {
+                activeArrows.push({
+                    x: bowPos.x,
+                    y: bowPos.y,
+                    vx: vx,
+                    vy: vy,
+                    isApple: currentArrow.isApple,
+                    width: canvas.width / 16, // 크기 조건: 화면의 16분의 1 크기 (약 50px)
+                    height: 4,
+                    collided: false
                 });
-                // 4-4. 바로 다음 화살 준비
-                checkAppleArrow();
+                rollNextArrow(); // 즉시 다음 화살 장전 (조건 4-4, 4-5)
             }
         });
 
-        // 렌더링 루프
-        function gameLoop() {
+        // 배경 별 무작위 생성 효과
+        let stars = [];
+        function generateStars() {
+            stars = [];
+            for(let i=0; i<40; i++) {
+                stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.5});
+            }
+        }
+        generateStars();
+
+        // 메인 업데이트 및 그리기 루프
+        function update() {
+            if(!gameActive) return;
+
+            // 1. 물리 연산 - 과녁 이동
+            target.y += target.speed * target.dir;
+            if(target.y - target.radiusD < 0 || target.y + target.radiusD > canvas.height) {
+                target.dir *= -1; // 캔버스 벽면 충돌 방지 예외처리
+            }
+
+            // 애플 화살 전용 타이머 연산 (1초마다 점선 가시성 반전)
+            if(currentArrow.isApple) {
+                appleTimer++;
+                if(appleTimer % 60 === 0) { // 약 1초 (60프레임)
+                    appleTrajectoryVisible = !appleTrajectoryVisible;
+                }
+            }
+
+            // 2. 그리기 작업
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let planet = planets[currentPlanetIdx];
 
-            if (isPlaying) {
-                // 2-4, 2-5. 과녁 위아래 천천히 이동 (5초마다 방향 전환)
-                target.dirTimer += 1/60;
-                if (target.dirTimer >= 5) {
-                    target.direction *= -1;
-                    target.dirTimer = 0;
-                }
-                target.y += target.speed * target.direction;
-                
-                // 하늘 밖으로 나가지 않게 제한
-                if (target.y < 100 || target.y > canvas.height * 0.6) {
-                    target.direction *= -1;
-                    target.dirTimer = 0;
-                }
-                
-                globalTime += 1/60;
-            }
-
-            // 1. 활 (고정)
-            ctx.beginPath();
-            ctx.arc(bow.x, bow.y, 40, -Math.PI/2, Math.PI/2);
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 4;
-            ctx.stroke();
-
-            // 2. 포물선 및 준비된 화살
-            if (isDragging) {
-                let dx = bow.x - dragCurrent.x;
-                let dy = bow.y - dragCurrent.y;
-                let power = Math.hypot(dx, dy) * 0.15;
-                let angle = Math.atan2(dy, dx);
-
-                let simVx = Math.cos(angle) * (5 + power);
-                let simVy = Math.sin(angle) * (5 + power);
-                let simX = bow.x;
-                let simY = bow.y;
-                
-                // 스케일링 된 중력
-                let g = planet.gravity * 0.03; 
-
+            // 우주 배경 성단 그리기
+            ctx.fillStyle = "rgba(255,255,255,0.3)";
+            stars.forEach(s => {
                 ctx.beginPath();
-                
-                // 4-6. 사과 화살일 경우 1초마다 점선 변경
-                if (nextIsApple) {
-                    // 1초 단위로 true/false 스위칭
-                    if (Math.floor(globalTime) % 2 === 0) {
-                        ctx.setLineDash([15, 5]);
-                    } else {
-                        ctx.setLineDash([5, 15]);
-                    }
-                } else {
-                    ctx.setLineDash([8, 8]);
-                }
-
-                for (let i = 0; i < 40; i++) {
-                    ctx.lineTo(simX, simY);
-                    simX += simVx;
-                    // 4-1, 4-3. 화살이므로 너무 직선/포물선이 되지 않게 중력 완화 및 공기저항
-                    simVy += g * 0.6; 
-                    simVx *= 0.99; 
-                }
-                ctx.strokeStyle = nextIsApple ? '#ffeb3b' : 'rgba(255, 255, 255, 0.7)';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                drawArrow(dragCurrent.x, dragCurrent.y, angle, nextIsApple);
-            } else if (isPlaying) {
-                drawArrow(bow.x, bow.y, 0, nextIsApple);
-            }
-
-            // 3. 날아가는 화살 처리
-            for (let i = arrows.length - 1; i >= 0; i--) {
-                let a = arrows[i];
-                if (!a.hit) {
-                    a.vy += planet.gravity * 0.03 * 0.6; // 실제 중력 적용 (완화됨)
-                    a.x += a.vx;
-                    a.y += a.vy;
-
-                    // 과녁 충돌 확인
-                    let distToTarget = Math.hypot(a.x - target.x, a.y - target.y);
-                    if (distToTarget <= target.rings[0].r) {
-                        a.hit = true;
-                        let hitScore = 0;
-                        for (let j = target.rings.length - 1; j >= 0; j--) {
-                            if (distToTarget <= target.rings[j].r) {
-                                hitScore = target.rings[j].score;
-                                break;
-                            }
-                        }
-                        
-                        if (a.isApple) hitScore *= 2; // 사과 화살 2배
-                        
-                        score += hitScore;
-                        scoreVal.textContent = score;
-                    }
-                }
-                
-                drawArrow(a.x, a.y, Math.atan2(a.vy, a.vx), a.isApple);
-                
-                // 화면 밖 화살 삭제
-                if (a.x > canvas.width + 100 || a.y > canvas.height + 100 || a.x < -100) {
-                    arrows.splice(i, 1);
-                }
-            }
-
-            // 4. 과녁 그리기 (역순으로 그려 작은 원이 위로 오게)
-            target.rings.forEach(ring => {
-                ctx.beginPath();
-                ctx.arc(target.x, target.y, ring.r, 0, Math.PI * 2);
-                ctx.fillStyle = ring.color;
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
                 ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.stroke();
             });
 
-            requestAnimationFrame(gameLoop);
+            // 과녁 그리기 (A, B, C, D 단계 과녁 고유 색상 및 점수)
+            // 외곽부터 그림 (D -> C -> B -> A)
+            const targetColor = planets[currentPlanetKey].color;
+            
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            ctx.strokeStyle = targetColor;
+            ctx.lineWidth = 2;
+            
+            // D구역 (1점)
+            ctx.beginPath(); ctx.arc(target.x, target.y, target.radiusD, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            // C구역 (2점)
+            ctx.fillStyle = "rgba(255,255,255,0.15)";
+            ctx.beginPath(); ctx.arc(target.x, target.y, target.radiusC, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            // B구역 (5점)
+            ctx.fillStyle = "rgba(255,255,255,0.25)";
+            ctx.beginPath(); ctx.arc(target.x, target.y, target.radiusB, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            // A구역 (10점 - 작음)
+            ctx.fillStyle = "#ff007f";
+            ctx.beginPath(); ctx.arc(target.x, target.y, target.radiusA, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+            // 활(Bow) 그리기 (사라지지 않고 상시 대기)
+            ctx.strokeStyle = "#00d2ff";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(bowPos.x - 10, bowPos.y, 35, -Math.PI/2, Math.PI/2);
+            ctx.stroke();
+            
+            // 활시위선
+            ctx.strokeStyle = "rgba(255,255,255,0.5)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(bowPos.x - 10, bowPos.y - 35);
+            if(isDragging) ctx.lineTo(dragEnd.x, dragEnd.y);
+            else ctx.lineTo(bowPos.x - 10, bowPos.y);
+            ctx.lineTo(bowPos.x - 10, bowPos.y + 35);
+            ctx.stroke();
+
+            // 대기 중인 화살 시각화 (조건 4-6 사과 화살 디자인 포함)
+            if(!isDragging) {
+                drawArrowIcon(bowPos.x, bowPos.y, 0, currentArrow.isApple);
+            }
+
+            // 드래그 중일 때 조준선 포물선 그리기 (조건 4-1, 4-3 납작하고 빠른 포물선 수학 공식 설계)
+            if (isDragging && appleTrajectoryVisible) {
+                ctx.save();
+                ctx.strokeStyle = currentArrow.isApple ? "#af0404" : "rgba(0, 210, 255, 0.6)";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]); // 점선 형태 구현
+                ctx.beginPath();
+
+                let tX = bowPos.x;
+                let tY = bowPos.y;
+                let tVx = (dragStart.x - dragEnd.x) * 0.25;
+                let tVy = (dragStart.y - dragEnd.y) * 0.25;
+
+                ctx.moveTo(tX, tY);
+                // 포물선 궤적 시뮬레이션 미리 그리기
+                for (let i = 0; i < 40; i++) {
+                    tX += tVx;
+                    tY += tVy;
+                    tVy += currentGravity; // 중력 적용 공식
+                    ctx.lineTo(tX, tY);
+                    if(tX > canvas.width || tY > canvas.height || tY < 0) break;
+                }
+                ctx.stroke();
+                ctx.restore();
+
+                // 조준 화살 방향 표시
+                let angle = Math.atan2(dragStart.y - dragEnd.y, dragStart.x - dragEnd.x);
+                drawArrowIcon(dragEnd.x, dragEnd.y, angle, currentArrow.isApple);
+            }
+
+            // 3. 날아가는 화살들 물리 엔진 연산 및 그리기
+            for (let i = activeArrows.length - 1; i >= 0; i--) {
+                let arrow = activeArrows[i];
+                
+                if (!arrow.collided) {
+                    arrow.x += arrow.vx;
+                    arrow.y += arrow.vy;
+                    arrow.vy += currentGravity; // 실시간 행성 중력 가속도 추가
+                }
+
+                // 화살 각도 계산
+                let arrowAngle = Math.atan2(arrow.vy, arrow.vx);
+
+                // 화살 렌더링
+                drawArrowIcon(arrow.x, arrow.y, arrowAngle, arrow.isApple, arrow.width);
+
+                // 화면 이탈 검사
+                if (arrow.x > canvas.width + 100 || arrow.y > canvas.height + 100 || arrow.x < -100) {
+                    activeArrows.splice(i, 1);
+                    continue;
+                }
+
+                // 과녁 충돌 판정 (화살 끝 부분 기준 수학적 거리 연산)
+                if (!arrow.collided) {
+                    let arrowTipX = arrow.x + Math.cos(arrowAngle) * (arrow.width / 2);
+                    let arrowTipY = arrow.y + Math.sin(arrowAngle) * (arrow.width / 2);
+                    
+                    let dist = Math.hypot(arrowTipX - target.x, arrowTipY - target.y);
+
+                    if (dist <= target.radiusD) {
+                        arrow.collided = true;
+                        // 점수 계산 판정 (과녁 안쪽 영역부터 검사)
+                        let earnedPoints = 0;
+                        if (dist <= target.radiusA) {
+                            earnedPoints = 10;
+                        } else if (dist <= target.radiusB) {
+                            earnedPoints = 5;
+                        } else if (dist <= target.radiusC) {
+                            earnedPoints = 2;
+                        } else {
+                            earnedPoints = 1;
+                        }
+
+                        // 사과 화살 2배 보너스 적용 조건 처리
+                        if(arrow.isApple) {
+                            earnedPoints *= 2;
+                        }
+
+                        score += earnedPoints;
+                        document.getElementById('score-disp').innerText = score;
+                        
+                        // 맞춘 화살은 과녁과 함께 사라지거나 이탈하게 제거 처리
+                        activeArrows.splice(i, 1);
+                    }
+                }
+            }
+
+            gameInterval = requestAnimationFrame(update);
         }
 
-        // 화살 그리기 함수
-        function drawArrow(x, y, angle, isApple) {
+        // 정교한 화살 오브젝트 드로잉 함수
+        function drawArrowIcon(x, y, angle, isApple, customWidth) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle);
 
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
+            let width = customWidth || (canvas.width / 16);
             
-            // 화살대
+            // 화살대 그리기
+            ctx.strokeStyle = isApple ? "#ff3333" : "#e2e8f0";
+            ctx.lineWidth = isApple ? 4 : 3;
             ctx.beginPath();
-            ctx.moveTo(-20, 0);
-            ctx.lineTo(15, 0);
+            ctx.moveTo(-width/2, 0);
+            ctx.lineTo(width/2, 0);
             ctx.stroke();
-            
-            // 화살촉
+
+            // 화살촉 (삼각형)
+            ctx.fillStyle = isApple ? "#ff0000" : "#cbd5e1";
             ctx.beginPath();
-            ctx.moveTo(15, 0);
-            ctx.lineTo(5, -5);
-            ctx.lineTo(5, 5);
+            ctx.moveTo(width/2, 0);
+            ctx.lineTo(width/2 - 10, -6);
+            ctx.lineTo(width/2 - 10, 6);
             ctx.closePath();
-            ctx.fillStyle = isApple ? '#ff5722' : '#fff';
             ctx.fill();
 
-            // 사과 장식
-            if (isApple) {
+            // 화살 깃털 고물 (깃)
+            ctx.fillStyle = isApple ? "#ffcc00" : "#3182ce";
+            ctx.beginPath();
+            ctx.moveTo(-width/2, 0);
+            ctx.lineTo(-width/2 - 6, -8);
+            ctx.lineTo(-width/2 + 4, -8);
+            ctx.lineTo(-width/2 + 10, 0);
+            ctx.lineTo(-width/2 + 4, 8);
+            ctx.lineTo(-width/2 - 6, 8);
+            ctx.closePath();
+            ctx.fill();
+
+            // 20분의 1 사과 화살 전용 오브젝트 매핑
+            if(isApple) {
+                ctx.fillStyle = "#fa5252"; // 사과 몸통
                 ctx.beginPath();
-                ctx.arc(0, 0, 5, 0, Math.PI * 2);
-                ctx.fillStyle = '#f44336'; // 빨간 사과
+                ctx.arc(0, -2, 8, 0, Math.PI*2);
                 ctx.fill();
+                // 사과 꼭지
+                ctx.strokeStyle = "#868e96";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -10);
+                ctx.quadraticCurveTo(3, -14, 5, -13);
+                ctx.stroke();
             }
 
             ctx.restore();
         }
-
-        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
 """
 
-# Streamlit에 HTML 렌더링 (스크롤바 없애고 전체화면 크기로)
-components.html(html_game_code, height=850, scrolling=False)
+# 스트림릿 컴포넌트로 HTML 주입 (크기 조절)
+components.html(game_html, height=620, width=850, scrolling=False)
