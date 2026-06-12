@@ -195,7 +195,8 @@ game_html = """
             transform: scale(1.05);
         }
 
-        #planet-earth { background: url('static/20201027_TqvUoa.jpg') no-repeat center/cover; }
+        #planet-earth { background: url('static/20201027_TqvUoa.jpg') no-repeat center/cover;
+        background-size: 80%;}
         #planet-moon { background: radial-gradient(circle at 30% 30%, #ccc, #666); color: #ddd; }
         #planet-mars { background: radial-gradient(circle at 30% 30%, #e03e1d, #5c1303); color: #ff6b6b; }
         #planet-venus { background: radial-gradient(circle at 30% 30%, #e3a857, #6d3e00); color: #ffd166; }
