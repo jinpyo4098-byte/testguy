@@ -30,7 +30,7 @@ game_html = """
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: url('달.jpg') no-repeat center/cover;
+            background: url('20201027_TqvUoa.jpg') no-repeat center/cover;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
