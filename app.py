@@ -195,7 +195,7 @@ game_html = """
             transform: scale(1.05);
         }
 
-        #planet-earth { background: url('/static/1231.jpg') no-repeat center/cover; }
+        #planet-earth { background: radial-gradient(circle at 30% 30%, #2b82c9, #053057); color: #00d2ff; }
         #planet-moon { background: radial-gradient(circle at 30% 30%, #ccc, #666); color: #ddd; }
         #planet-mars { background: radial-gradient(circle at 30% 30%, #e03e1d, #5c1303); color: #ff6b6b; }
         #planet-venus { background: radial-gradient(circle at 30% 30%, #e3a857, #6d3e00); color: #ffd166; }
@@ -250,7 +250,7 @@ game_html = """
                 <div id="planet-earth" class="planet-circle active" onclick="selectPlanet('earth')">지구</div>
                 <div id="planet-moon" class="planet-circle" onclick="selectPlanet('moon')">달</div>
                 <div id="planet-mars" class="planet-circle" onclick="selectPlanet('mars')">화성</div>
-                <div id="planet-venus" class="planet-circle" onclick="selectPlanet('venus')">금성</div>
+                <div id="planet-venus" class="planet-circle" onclick="withPlanet('venus')">금성</div>
                 <div id="planet-europa" class="planet-circle" onclick="selectPlanet('europa')">유로파</div>
             </div>
 
@@ -291,11 +291,14 @@ game_html = """
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
+        // 활 및 조준점 변수 전역 선언
+        const bowPos = { x: 250, y: window.innerHeight / 2 }; // [수정] 마우스 공간 확보를 위해 왼쪽 마진을 100 -> 250으로 오른쪽 이동
+
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
-            bowPos.x = 100; 
+            bowPos.x = 250; // [수정] 화면 리사이즈 시에도 활의 x축 위치를 250으로 고정
             bowPos.y = canvas.height / 2;
             target.x = canvas.width - 150; 
         }
@@ -352,7 +355,6 @@ game_html = """
         let gravityScale = 0.03; 
         let currentGravity = planets[currentPlanetKey].gravity * gravityScale;
 
-        const bowPos = { x: 100, y: window.innerHeight / 2 };
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
         let dragEnd = { x: 0, y: 0 };
@@ -379,6 +381,9 @@ game_html = """
             
             generateStars(); 
         }
+
+        // 금성 오타 바인딩 예외 처리 보완
+        function withPlanet(key) { selectPlanet(key); }
 
         function startGame() {
             score = 0;
@@ -469,7 +474,7 @@ game_html = """
 
         function activateAbilityBuff() {
             isBuffed = true;
-            buffTimer = 480; // [수정] 60fps * 8초 = 480프레임 동안 유지
+            buffTimer = 480; 
             resetTargetSpecification(true);
             document.getElementById('buff-alert').classList.remove('hidden');
             document.getElementById('time-progress').classList.add('buffed');
@@ -706,7 +711,7 @@ game_html = """
                 ctx.restore();
             }
 
-            // 활 그리기 (사람 캐릭터 파트 완전히 삭제)
+            // 활 그리기
             ctx.save();
             ctx.strokeStyle = isBuffed ? "#ff0055" : "#00d2ff";
             ctx.lineWidth = 5; 
