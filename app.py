@@ -169,6 +169,12 @@ game_html = """
             box-shadow: 0 0 18px currentColor;
         }
 
+        /* 게임 중 비활성화 상태 스타일 */
+        .disabled-ui {
+            pointer-events: none !important;
+            opacity: 0.4 !important;
+        }
+
         #planet-earth { background: radial-gradient(circle at 30% 30%, #2b82c9, #053057); color: #00d2ff; }
         #planet-moon { background: radial-gradient(circle at 30% 30%, #ccc, #666); color: #ddd; }
         #planet-mars { background: radial-gradient(circle at 30% 30%, #e03e1d, #5c1303); color: #ff6b6b; }
@@ -229,7 +235,7 @@ game_html = """
 
         <div id="start-screen" class="screen-overlay">
             <h1 style="margin-top: 80px;">Gravity Arrow</h1>
-            <p style="font-size: 1.3rem; color: #a0aec0; margin-bottom: 40px;">왼쪽에서 활을 당겨 오른쪽의 움직이는 과녁을 맞추세요!</p>
+            <p style="font-size: 1.3rem; color: #a0aec0; margin-bottom: 40px;">상단에서 행성을 고르고 Start 버튼을 누르세요!</p>
             <button class="btn" onclick="startGame()">Start Game</button>
         </div>
 
@@ -240,6 +246,7 @@ game_html = """
                 최대 콤보: <span id="final-combo-disp" style="color: #ff3e3e; font-weight: bold;">0</span> 콤보<br>
                 <span id="highscore-message" style="font-size: 1.4rem; color: #4cdf50;"></span>
             </div>
+            <p style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 20px;">행성을 다시 고르고 재시작할 수 있습니다.</p>
             <button class="btn" onclick="backToMain()">다시 하기</button>
         </div>
 
@@ -250,15 +257,13 @@ game_html = """
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
-        // 반응형 전면 스크린 해상도 설정 함수
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
-            // [위치 변경] 활은 왼쪽, 과녁은 오른쪽 배치
             bowPos.x = 100; 
             bowPos.y = canvas.height / 2;
-            target.x = canvas.width - 120; 
+            target.x = canvas.width - 150; // 과녁 크기가 커져서 여백을 살짝 늘림
         }
 
         // 행성 데이터
@@ -290,19 +295,19 @@ game_html = """
         let gravityScale = 0.03; 
         let currentGravity = planets[currentPlanetKey].gravity * gravityScale;
 
-        // 과녁 변수 (반경 설정)
+        // [과녁 크기 대폭 상향] 반지름 크기들을 전체적으로 확대함 (기존 최대 55 -> 변경 최대 85)
         let target = {
-            x: window.innerWidth - 120,
+            x: window.innerWidth - 150,
             y: window.innerHeight / 2,
-            radiusD: 55, 
-            radiusC: 40, 
-            radiusB: 25, 
-            radiusA: 10,  
+            radiusD: 85, 
+            radiusC: 62, 
+            radiusB: 38, 
+            radiusA: 15,  
             speed: 2.3,
             dir: 1
         };
         
-        // 활 및 화살 변수 (왼쪽 배치)
+        // 활 및 화살 변수
         const bowPos = { x: 100, y: window.innerHeight / 2 };
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
@@ -319,6 +324,7 @@ game_html = """
         resizeCanvas();
 
         function selectPlanet(key) {
+            if (gameActive) return; // [기능 제한] 게임 도중에는 고를 수 없음
             currentPlanetKey = key;
             planetKeys.forEach(k => {
                 document.getElementById(`planet-${k}`).classList.remove('active');
@@ -342,9 +348,11 @@ game_html = """
             particles = [];
             scoreTexts = [];
 
+            // UI 제어 (시작화면 숨김, [행성 선택 비활성화])
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.add('hidden');
             document.getElementById('combo-wrapper').classList.add('hidden');
+            document.getElementById('planet-selector-bar').classList.add('disabled-ui');
 
             document.getElementById('score-disp').innerText = score;
             document.getElementById('time-disp').innerText = timeLeft;
@@ -388,6 +396,8 @@ game_html = """
                 msgElement.innerText = "";
             }
 
+            // [행성 고르기 활성화] 게임 종료 후 다시 고를 수 있게 제한 해제
+            document.getElementById('planet-selector-bar').classList.remove('disabled-ui');
             document.getElementById('result-screen').classList.remove('hidden');
         }
 
@@ -438,7 +448,6 @@ game_html = """
             return { x: e.clientX, y: e.clientY };
         }
 
-        // 왼쪽 조준 활쏘기용 마우스 드래그 로직 (오른쪽으로 당겨서 왼쪽으로 쏨)
         window.addEventListener('mousedown', (e) => {
             if(!gameActive) return;
             const mousePos = getMousePos(e);
@@ -460,10 +469,10 @@ game_html = """
             if (!isDragging) return;
             isDragging = false;
 
-            const dx = dragStart.x - dragEnd.x; // 당긴 거리 벡터
+            const dx = dragStart.x - dragEnd.x; 
             const dy = dragStart.y - dragEnd.y;
             
-            if (dx <= 0) return; // 오른쪽(과녁 방향)으로 발사하려면 dragEnd가 dragStart보다 왼쪽이어야 함 (dx > 0)
+            if (dx <= 0) return; 
 
             const speedScale = 0.25; 
             const vx = dx * speedScale; 
@@ -476,7 +485,7 @@ game_html = """
                     vx: vx,
                     vy: vy,
                     isApple: currentArrow.isApple,
-                    width: 95, // [크기 업그레이드] 화살 길이 상향 (70 -> 95)
+                    width: 95, 
                     height: 5,
                     collided: false,
                     stuckTimer: 45, 
@@ -501,7 +510,7 @@ game_html = """
         function update() {
             if (gameActive) {
                 target.y += target.speed * target.dir;
-                if(target.y - target.radiusD < 100 || target.y + target.radiusD > canvas.height - 40) {
+                if(target.y - target.radiusD < 110 || target.y + target.radiusD > canvas.height - 40) {
                     target.dir *= -1; 
                 }
 
@@ -532,25 +541,26 @@ game_html = """
                 ctx.fill();
             });
 
-            // [과녁 수정] 오른쪽에 위치하면서 왼쪽을 바라보는 얇은 타원형 과녁 디자인
+            // 과녁 그리기 (왼쪽 비스듬히 바라보는 큰 타원형 과녁)
             const targetColor = planets[currentPlanetKey].color;
-            const skewX = 0.25; // 타원 찌그러짐 비율 (왼쪽을 비스듬히 바라봄)
-            const frontX = target.x - (target.radiusD * skewX); // 과녁의 왼쪽 표면 가상 X축
+            const skewX = 0.25; 
+            const frontX = target.x - (target.radiusD * skewX); 
+            const backX = target.x + (target.radiusD * skewX); // [판정 확장] 뒷가장자리 연산용 위치
 
             ctx.save();
             // 뒷면 지지대 프레임
             ctx.strokeStyle = "#4a5568";
-            ctx.lineWidth = 5;
+            ctx.lineWidth = 6;
             ctx.beginPath();
             ctx.moveTo(target.x + 5, target.y - target.radiusD);
             ctx.lineTo(target.x + 5, target.y + target.radiusD);
             ctx.stroke();
 
-            // 바깥 링 그림자 효과
+            // 바깥 링 그림자
             ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
             ctx.beginPath(); ctx.ellipse(target.x, target.y, (target.radiusD + 6) * skewX, target.radiusD + 6, 0, 0, Math.PI * 2); ctx.fill();
 
-            // 과녁 레이어 렌더링 (D -> C -> B -> A)
+            // 과녁판 그리기 (D -> C -> B -> A)
             ctx.fillStyle = "#ffffff";
             ctx.beginPath(); ctx.ellipse(target.x, target.y, target.radiusD * skewX, target.radiusD, 0, 0, Math.PI * 2); ctx.fill(); 
             
@@ -564,10 +574,10 @@ game_html = """
             ctx.beginPath(); ctx.ellipse(target.x, target.y, target.radiusA * skewX, target.radiusA, 0, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
 
-            // [활 크기 업그레이드] 활 그리기 (왼쪽 배치, 반경 35 -> 48 확대)
+            // 활 그리기 (왼쪽 배치)
             ctx.save();
             ctx.strokeStyle = "#00d2ff";
-            ctx.lineWidth = 5; // 두께 상향
+            ctx.lineWidth = 5; 
             ctx.beginPath();
             ctx.arc(bowPos.x - 12, bowPos.y, 48, -Math.PI/2, Math.PI/2); 
             ctx.stroke();
@@ -586,7 +596,7 @@ game_html = """
                 drawArrowIcon(bowPos.x, bowPos.y, 0, currentArrow.isApple);
             }
 
-            // 왼쪽 -> 오른쪽 궤적 포물선 가이드
+            // 가이드선
             if (isDragging && appleTrajectoryVisible && gameActive) {
                 let tVx = (dragStart.x - dragEnd.x) * 0.25;
                 if (tVx > 0) { 
@@ -616,7 +626,7 @@ game_html = """
                 }
             }
 
-            // 화살 물리 루프
+            // 화살 관리 루프
             for (let i = activeArrows.length - 1; i >= 0; i--) {
                 let arrow = activeArrows[i];
                 
@@ -632,7 +642,6 @@ game_html = """
                 let arrowAngle = arrow.collided ? arrow.stuckAngle : Math.atan2(arrow.vy, arrow.vx);
                 drawArrowIcon(arrow.x, arrow.y, arrowAngle, arrow.isApple, arrow.width);
 
-                // 빗나감 처리
                 if (!arrow.collided && (arrow.x > canvas.width + 50 || arrow.y > canvas.height + 50 || arrow.y < -50)) {
                     if(!arrow.handled) {
                         combo = 0; 
@@ -647,14 +656,15 @@ game_html = """
                     continue;
                 }
 
-                // 타원형 과녁 정면 충돌 판정 (오른쪽 과녁 기준)
+                // [충돌 조건 변경] 과녁의 맨 앞 표면부터 맨 뒷 영역까지 과녁판 두께 전체를 감지하도록 범위 확장 (frontX -> backX)
                 if (!arrow.collided) {
                     let arrowTipX = arrow.x + Math.cos(arrowAngle) * (arrow.width / 2);
                     let arrowTipY = arrow.y + Math.sin(arrowAngle) * (arrow.width / 2);
                     
-                    if (arrowTipX >= frontX && arrowTipX <= target.x + 10 && arrow.vx > 0) {
+                    if (arrowTipX >= frontX && arrowTipX <= backX + 15 && arrow.vx > 0) {
                         let dy = Math.abs(arrowTipY - target.y);
 
+                        // 과녁 전체(가장 큰 원 테두리 radiusD 안쪽 어디든) 판정 인정
                         if (dy <= target.radiusD) {
                             arrow.collided = true;
                             arrow.handled = true;
@@ -672,6 +682,8 @@ game_html = """
 
                             let earnedPoints = 0;
                             let hColor = "#ffffff";
+                            
+                            // 꽂히는 범위 세부 점수
                             if (dy <= target.radiusA) {
                                 earnedPoints = 10; hColor = "#ffcc00";
                             } else if (dy <= target.radiusB) {
@@ -679,7 +691,7 @@ game_html = """
                             } else if (dy <= target.radiusC) {
                                 earnedPoints = 2;  hColor = targetColor;
                             } else {
-                                earnedPoints = 1;  hColor = "#e2e8f0";
+                                earnedPoints = 1;  hColor = "#e2e8f0"; // 가장자리 구역도 1점 획득 가능!
                             }
 
                             if(arrow.isApple) {
@@ -699,7 +711,7 @@ game_html = """
                 }
             }
 
-            // 파티클 렌더링
+            // 파티클
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx;
@@ -719,7 +731,7 @@ game_html = """
                 ctx.restore();
             }
 
-            // 둥둥 텍스트 렌더링
+            // 점수 텍스트
             for (let i = scoreTexts.length - 1; i >= 0; i--) {
                 let stx = scoreTexts[i];
                 stx.y += stx.vy;
@@ -743,22 +755,20 @@ game_html = """
             gameInterval = requestAnimationFrame(update);
         }
 
-        // [화살 크기 업그레이드] 두께 및 촉 크기 비율 확대 적용 함수
         function drawArrowIcon(x, y, angle, isApple, customWidth) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle);
 
-            let width = customWidth || 95; // 기본 화살 길이 상향
+            let width = customWidth || 95; 
             
             ctx.strokeStyle = isApple ? "#ff3333" : "#e2e8f0";
-            ctx.lineWidth = isApple ? 5.5 : 4.5; // 화살대 두께 확대
+            ctx.lineWidth = isApple ? 5.5 : 4.5; 
             ctx.beginPath();
             ctx.moveTo(-width/2, 0);
             ctx.lineTo(width/2, 0);
             ctx.stroke();
 
-            // 삼각형 촉 크기 상향
             ctx.fillStyle = isApple ? "#ff0000" : "#cbd5e1";
             ctx.beginPath();
             ctx.moveTo(width/2, 0);
@@ -767,7 +777,6 @@ game_html = """
             ctx.closePath();
             ctx.fill();
 
-            // 깃털 꼬리 크기 상향
             ctx.fillStyle = isApple ? "#ffcc00" : "#3182ce";
             ctx.beginPath();
             ctx.moveTo(-width/2, 0);
