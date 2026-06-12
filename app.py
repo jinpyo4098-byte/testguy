@@ -393,7 +393,7 @@ game_html = """
         document.getElementById('main-high-disp').innerText = highScore;
         initCanvasSize();
 
-        // 메인 선택화면 행성 고유 디자인 그리기 엔진
+        // 메인 선택화면 행성 디자인
         function drawPlanetButtonsVisual() {
             planetKeys.forEach(key => {
                 const pCanvas = document.getElementById(`btn-canvas-${key}`);
@@ -406,15 +406,14 @@ game_html = """
                 pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
                 pCtx.save();
                 
-                // 원형 클리핑 영역 지정
                 pCtx.beginPath();
                 pCtx.arc(cx, cy, r, 0, Math.PI * 2);
                 pCtx.clip();
 
                 if (key === 'earth') {
-                    pCtx.fillStyle = '#2b82c9'; // 파란 바다
+                    pCtx.fillStyle = '#2b82c9'; 
                     pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
-                    pCtx.fillStyle = '#228b22'; // 초록 대륙
+                    pCtx.fillStyle = '#228b22'; 
                     pCtx.beginPath();
                     pCtx.arc(cx - 10, cy - 5, 15, 0, Math.PI * 2);
                     pCtx.arc(cx + 12, cy + 10, 12, 0, Math.PI * 2);
@@ -422,9 +421,9 @@ game_html = """
                     pCtx.fill();
                 } 
                 else if (key === 'moon') {
-                    pCtx.fillStyle = '#bbbbbb'; // 회색 본체
+                    pCtx.fillStyle = '#bbbbbb'; 
                     pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
-                    pCtx.fillStyle = '#666666'; // 크레이터 자국
+                    pCtx.fillStyle = '#666666'; 
                     pCtx.beginPath();
                     pCtx.arc(cx - 12, cy - 10, 5, 0, Math.PI * 2);
                     pCtx.arc(cx + 10, cy + 8, 6, 0, Math.PI * 2);
@@ -433,9 +432,9 @@ game_html = """
                     pCtx.fill();
                 } 
                 else if (key === 'mars') {
-                    pCtx.fillStyle = '#e03e1d'; // 주황 본체
+                    pCtx.fillStyle = '#e03e1d'; 
                     pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
-                    pCtx.fillStyle = '#8b4513'; // 갈색 반점
+                    pCtx.fillStyle = '#8b4513'; 
                     pCtx.beginPath();
                     pCtx.arc(cx - 8, cy - 8, 7, 0, Math.PI * 2);
                     pCtx.arc(cx + 10, cy + 10, 6, 0, Math.PI * 2);
@@ -443,18 +442,18 @@ game_html = """
                     pCtx.fill();
                 } 
                 else if (key === 'venus') {
-                    pCtx.fillStyle = '#ffd166'; // 노란 본체
+                    pCtx.fillStyle = '#ffd166'; 
                     pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
-                    pCtx.fillStyle = '#b8860b'; // 진노란 무늬
+                    pCtx.fillStyle = '#b8860b'; 
                     pCtx.beginPath();
                     pCtx.ellipse(cx, cy - 10, 20, 5, 0, 0, Math.PI * 2);
                     pCtx.ellipse(cx + 5, cy + 8, 16, 4, Math.PI / 12, 0, Math.PI * 2);
                     pCtx.fill();
                 } 
                 else if (key === 'europa') {
-                    pCtx.fillStyle = '#a5cad6'; // 청백색 본체
+                    pCtx.fillStyle = '#a5cad6'; 
                     pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
-                    pCtx.strokeStyle = '#4682b4'; pCtx.lineWidth = 2; // 얼음 금
+                    pCtx.strokeStyle = '#4682b4'; pCtx.lineWidth = 2; 
                     pCtx.beginPath();
                     pCtx.moveTo(cx - 20, cy - 20); pCtx.lineTo(cx + 20, cy + 20);
                     pCtx.moveTo(cx + 20, cy - 15); pCtx.lineTo(cx - 15, cy + 20);
@@ -528,6 +527,7 @@ game_html = """
             initEnvParticles();
         }
 
+        let targetDirInterval;
         function startGame() {
             score = 0;
             timeLeft = totalDuration; 
@@ -561,11 +561,13 @@ game_html = """
             initStars();
             initEnvParticles();
 
-            let targetDirInterval = setInterval(() => {
+            if(targetDirInterval) clearInterval(targetDirInterval);
+            targetDirInterval = setInterval(() => {
                 if(!gameActive) clearInterval(targetDirInterval);
                 target.dir *= -1;
             }, 4500);
 
+            if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateProgressBar();
@@ -579,6 +581,7 @@ game_html = """
                 }
             }, 1000);
 
+            if(gameInterval) cancelAnimationFrame(gameInterval);
             gameInterval = requestAnimationFrame(update);
         }
 
@@ -638,6 +641,7 @@ game_html = """
             gameActive = false;
             cancelAnimationFrame(gameInterval);
             clearInterval(timerInterval);
+            if(targetDirInterval) clearInterval(targetDirInterval);
             
             document.getElementById('ingame-ui').classList.add('hidden');
             document.getElementById('combo-wrapper').classList.add('hidden');
@@ -718,17 +722,14 @@ game_html = """
             };
         }
 
-        // 실시간 마우스 움직임을 통한 각도 반영 조정
         window.addEventListener('mousemove', (e) => {
             mousePos = getCanvasMousePos(e);
             currentAngle = Math.atan2(mousePos.y - bowPos.y, mousePos.x - bowPos.x);
         });
 
-        // 원래의 마우스 클릭 발사 시스템으로 복구 통합 완료
         window.addEventListener('mousedown', (e) => {
             if (!gameActive) return;
             
-            // 인게임 영역 내부 클릭 시에만 발사
             let clickedPos = getCanvasMousePos(e);
             if (clickedPos.x >= 0 && clickedPos.x <= canvas.width && clickedPos.y >= 0 && clickedPos.y <= canvas.height) {
                 let vx = Math.cos(currentAngle) * shootPower;
@@ -750,7 +751,6 @@ game_html = """
             }
         });
 
-        // 초기 실행 세팅
         drawPlanetButtonsVisual();
         initStars();
         initEnvParticles();
@@ -796,7 +796,6 @@ game_html = """
                 }
             }
 
-            // 렌더링 시작
             ctx.save();
             if (shakeIntensity > 0) {
                 ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
@@ -806,9 +805,6 @@ game_html = """
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // -------------------------------------------------------------
-            // [1단계: 요청 동적 배경 및 기상 환경 렌더링]
-            // -------------------------------------------------------------
             if (currentPlanetKey === 'earth') ctx.fillStyle = '#87CEEB'; 
             else if (currentPlanetKey === 'moon') ctx.fillStyle = '#050505'; 
             else if (currentPlanetKey === 'mars') ctx.fillStyle = '#cda365'; 
@@ -859,9 +855,6 @@ game_html = """
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // -------------------------------------------------------------
-            // [2단계: 요청된 하단 지형 디자인]
-            // -------------------------------------------------------------
             let groundHeight = 120;
             let gY = canvas.height - groundHeight;
 
@@ -904,9 +897,6 @@ game_html = """
                 ctx.beginPath(); ctx.moveTo(canvas.width - 150, gY); ctx.lineTo(canvas.width - 90, canvas.height - 45); ctx.stroke();
             }
 
-            // -------------------------------------------------------------
-            // [3단계: 과녁 행성 자체 비주얼 디테일 커스텀화]
-            // -------------------------------------------------------------
             const skewX = 0.25; 
             const frontX = target.x - (target.radiusD * skewX); 
             const backX = target.x + (target.radiusD * skewX); 
@@ -1141,47 +1131,23 @@ game_html = """
             }
 
             ctx.restore(); 
-            gameInterval = requestAnimationFrame(update);
-        }
-
-        function drawArrowIcon(x, y, angle, isApple, isGiant, customWidth) {
-            ctx.save();
-            ctx.translate(x, y); ctx.rotate(angle);
-            let width = customWidth || 95; 
-            
-            if (isGiant) {
-                ctx.strokeStyle = "#ffcc00";
-                ctx.lineWidth = 11; 
-                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(width/2, 0); ctx.stroke();
-
-                ctx.fillStyle = "#ff3e3e";
-                ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2 - 35, -20); ctx.lineTo(width/2 - 35, 20); ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = "#e3a857";
-                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(-width/2 - 20, -22); ctx.lineTo(-width/2 + 10, -22); ctx.lineTo(-width/2 + 25, 0); ctx.lineTo(-width/2 + 10, 22); ctx.lineTo(-width/2 - 20, 22); ctx.closePath(); ctx.fill();
+            if(gameActive) {
+                gameInterval = requestAnimationFrame(update);
             } else {
-                ctx.strokeStyle = isApple ? "#ff3333" : "#e2e8f0";
-                ctx.lineWidth = isApple ? 5.5 : 4.5; 
-                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(width/2, 0); stroke();
-
-                ctx.fillStyle = isApple ? "#ff0000" : "#cbd5e1";
-                ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2 - 15, -8); ctx.lineTo(width/2 - 15, 8); ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = isApple ? "#ffcc00" : "#3182ce";
-                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(-width/2 - 8, -10); ctx.lineTo(-width/2 + 5, -10); ctx.lineTo(-width/2 + 12, 0); ctx.lineTo(-width/2 + 5, 10); ctx.lineTo(-width/2 - 8, 10); ctx.closePath(); ctx.fill();
-
-                if(isApple) {
-                    ctx.fillStyle = "#fa5252"; ctx.beginPath(); ctx.arc(0, -4, 11, 0, Math.PI*2); ctx.fill();
-                    ctx.strokeStyle = "#868e96"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(3, -19, 6, -17); ctx.stroke();
-                }
+                ctx.clearRect(0,0,canvas.width, canvas.height);
+                initStars();
+                ctx.fillStyle = "rgba(255,255,255,0.48)";
+                stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
             }
-            ctx.restore();
         }
 
-        update();
+        // 초기 화면 구성을 위한 1회성 드로우
+        initStars();
+        ctx.fillStyle = "rgba(255,255,255,0.48)";
+        stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
     </script>
 </body>
 </html>
 """
 
-components.html(game_html, height=720, scrolling=False)
+components.html(game_html, height=760, scrolling=False)
