@@ -1,14 +1,14 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 스트림릿 페이지 설정 (여백 제거)
-st.set_page_config(page_title="Gravity Arrow", layout="wide")
+# 스트림릿 페이지 설정 및 여백 제거
+st.set_page_config(page_title="Gravity Arrow - 16:9", layout="wide")
 st.markdown(
     """
     <style>
     .reportview-container .main .block-container{ max-width: 100%; padding: 0; }
-    iframe { display: block; width: 100vw; height: 98vh; border: none; }
-    body { margin: 0; }
+    iframe { display: block; width: 100vw; height: 95vh; border: none; }
+    body { margin: 0; background-color: #050608; }
     </style>
     """,
     unsafe_allow_html=True
@@ -28,16 +28,24 @@ game_html = """
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: radial-gradient(circle, #161f2b 0%, #050608 100%);
+            background-color: #050608;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        /* [수정] 16:9 비율 고정 컨테이너 정의 */
         #game-wrapper {
             position: relative;
-            width: 100vw;
-            height: 100vh;
+            width: 1200px;
+            height: 675px;
+            background: radial-gradient(circle, #161f2b 0%, #050608 100%);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 2px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            border-radius: 8px;
         }
 
         #game-canvas {
@@ -61,7 +69,7 @@ game_html = """
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(5, 6, 8, 0.9);
+            background: rgba(5, 6, 8, 0.92);
             z-index: 10;
         }
 
@@ -70,7 +78,7 @@ game_html = """
         }
 
         h1 {
-            font-size: 4.5rem;
+            font-size: 3.8rem;
             margin: 10px 0;
             text-shadow: 0 0 20px #00d2ff;
             font-weight: 800;
@@ -78,15 +86,15 @@ game_html = """
         }
 
         .result-title {
-            font-size: 3.5rem;
+            font-size: 3.2rem;
             color: #ffcc00;
             text-shadow: 0 0 15px #ffcc00;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .score-report {
-            font-size: 2rem;
-            margin-bottom: 45px;
+            font-size: 1.6rem;
+            margin-bottom: 35px;
             text-align: center;
             line-height: 1.6;
         }
@@ -99,11 +107,11 @@ game_html = """
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 60%;
-            max-width: 700px;
+            width: 70%;
+            max-width: 600px;
             background: rgba(255, 255, 255, 0.07);
-            padding: 15px 30px;
-            border-radius: 25px;
+            padding: 12px 25px;
+            border-radius: 20px;
             box-sizing: border-box;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -111,19 +119,19 @@ game_html = """
         }
 
         .stats {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: bold;
             letter-spacing: 1px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             width: 100%;
             text-align: center;
         }
 
         .progress-container {
             width: 100%;
-            height: 14px;
+            height: 12px;
             background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 7px;
+            border-radius: 6px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -145,34 +153,34 @@ game_html = """
             background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
             border: none;
             color: white;
-            padding: 18px 45px;
-            font-size: 1.5rem;
+            padding: 14px 38px;
+            font-size: 1.3rem;
             font-weight: bold;
-            border-radius: 35px;
+            border-radius: 30px;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 20px rgba(0, 102, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(0, 132, 255, 0.6);
+            box-shadow: 0 6px 20px rgba(0, 132, 255, 0.6);
         }
 
         .main-planet-selector {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
             background: rgba(255, 255, 255, 0.05);
-            padding: 20px 35px;
-            border-radius: 50px;
+            padding: 15px 30px;
+            border-radius: 40px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .planet-circle {
-            width: 65px;
-            height: 65px;
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
             cursor: pointer;
             border: 3px solid transparent;
@@ -180,7 +188,7 @@ game_html = """
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: bold;
             text-shadow: 1px 1px 2px #000;
         }
@@ -191,12 +199,11 @@ game_html = """
 
         .planet-circle.active {
             border-color: #fff;
-            box-shadow: 0 0 22px currentColor;
+            box-shadow: 0 0 18px currentColor;
             transform: scale(1.05);
         }
 
-        #planet-earth { background: url('static/20201027_TqvUoa.jpg') no-repeat center/cover;
-        background-size: 80%;}
+        #planet-earth { background: radial-gradient(circle at 30% 30%, #2b82c9, #053057); color: #00d2ff; }
         #planet-moon { background: radial-gradient(circle at 30% 30%, #ccc, #666); color: #ddd; }
         #planet-mars { background: radial-gradient(circle at 30% 30%, #e03e1d, #5c1303); color: #ff6b6b; }
         #planet-venus { background: radial-gradient(circle at 30% 30%, #e3a857, #6d3e00); color: #ffd166; }
@@ -204,7 +211,7 @@ game_html = """
 
         #combo-wrapper {
             position: absolute;
-            bottom: 40px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 5;
@@ -213,7 +220,7 @@ game_html = """
         }
         
         .combo-text {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 900;
             font-style: italic;
             color: #ff3e3e;
@@ -223,10 +230,10 @@ game_html = """
 
         #buff-alert {
             position: absolute;
-            top: 120px;
+            top: 110px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: bold;
             color: #ffcc00;
             text-shadow: 0 0 15px #ff3300;
@@ -234,8 +241,9 @@ game_html = """
             pointer-events: none;
             letter-spacing: 2px;
             background: rgba(0,0,0,0.5);
-            padding: 8px 25px;
-            border-radius: 15px;
+            padding: 6px 20px;
+            border-radius: 12px;
+            width: max-content;
         }
     </style>
 </head>
@@ -245,7 +253,7 @@ game_html = """
         
         <div id="start-screen" class="screen-overlay">
             <h1>Gravity Arrow</h1>
-            <p style="font-size: 1.4rem; color: #a0aec0; margin-bottom: 30px;">행성을 선택하고 15초에 등장하는 운석을 파괴해 각성하세요!</p>
+            <p style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 25px;">행성을 선택하고 15초에 등장하는 운석을 파괴해 각성하세요!</p>
             
             <div class="main-planet-selector" id="planet-selector-bar">
                 <div id="planet-earth" class="planet-circle active" onclick="selectPlanet('earth')">지구</div>
@@ -256,7 +264,7 @@ game_html = """
             </div>
 
             <button class="btn" onclick="startGame()">게임 시작</button>
-            <p style="font-size: 1.1rem; color: #718096; margin-top: 25px;">최고 기록: <span id="main-high-disp" style="color:#00d2ff;">0</span>점</p>
+            <p style="font-size: 1rem; color: #718096; margin-top: 20px;">최고 기록: <span id="main-high-disp" style="color:#00d2ff;">0</span>점</p>
         </div>
 
         <div id="ingame-ui" class="ui-panel hidden">
@@ -280,7 +288,7 @@ game_html = """
             <div class="score-report">
                 최종 점수: <span id="final-score-disp" style="color: #00d2ff; font-weight: bold;">0</span> 점<br>
                 최대 콤보: <span id="final-combo-disp" style="color: #ff3e3e; font-weight: bold;">0</span> 콤보<br>
-                <span id="highscore-message" style="font-size: 1.4rem; color: #4cdf50;"></span>
+                <span id="highscore-message" style="font-size: 1.2rem; color: #4cdf50;"></span>
             </div>
             <button class="btn" onclick="goToMain()">메인으로 가기</button>
         </div>
@@ -292,11 +300,13 @@ game_html = """
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
-        const bowPos = { x: 250, y: window.innerHeight / 2 }; 
+        // [수정] 16:9 컨테이너 고정 스케일에 맞춘 좌표 할당
+        const bowPos = { x: 250, y: 675 / 2 }; 
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        function initCanvasSize() {
+            // 브라우저 크기와 독립적으로 해상도를 1200x675 고정값 설계
+            canvas.width = 1200;
+            canvas.height = 675;
             
             bowPos.x = 250; 
             bowPos.y = canvas.height / 2;
@@ -334,10 +344,9 @@ game_html = """
             destroyed: false
         };
 
-        // [크기 키움] 과녁의 기본 베이스 스케일을 85 -> 115로 대폭 확대
         let target = {
-            x: window.innerWidth - 150,
-            y: window.innerHeight / 2,
+            x: 1200 - 150,
+            y: 675 / 2,
             baseRadiusD: 115, 
             radiusD: 115, radiusC: 84, radiusB: 51, radiusA: 20,  
             baseSpeed: 2.5,
@@ -361,14 +370,12 @@ game_html = """
         let dragEnd = { x: 0, y: 0 };
         
         let activeArrows = [];
-        // 화살 종류 구조: { isApple: false, isGiant: false }
         let currentArrow = { isApple: false, isGiant: false };
         let arrowTrajectoryVisible = true;
         let blinkTimer = 0;
 
         document.getElementById('main-high-disp').innerText = highScore;
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        initCanvasSize();
 
         function selectPlanet(key) {
             if (gameActive) return; 
@@ -457,7 +464,6 @@ game_html = """
             meteor.active = true;
         }
 
-        // [크기 키움] 능력(버프) 발동 시 배율 증가 조정 (기존 1.5배 -> 1.6배로 가독성 및 영역 극대화)
         function resetTargetSpecification(buffActive) {
             if(buffActive) {
                 target.radiusD = target.baseRadiusD * 1.6; 
@@ -528,12 +534,11 @@ game_html = """
             scoreTexts = [];
         }
 
-        // [확률 추가] 사과 화살(6%)보다 2배 더 적은 확률인 3% 확률로 겁나큰 화살 생성
         function rollNextArrow() {
             let rand = Math.random();
-            if (rand < 0.03) { // 3% 확률로 겁나큰 화살
+            if (rand < 0.03) { 
                 currentArrow = { isApple: false, isGiant: true };
-            } else if (rand < 0.09) { // 6% 확률로 사과 화살 (0.03 ~ 0.09)
+            } else if (rand < 0.09) { 
                 currentArrow = { isApple: true, isGiant: false };
             } else {
                 currentArrow = { isApple: false, isGiant: false };
@@ -564,14 +569,18 @@ game_html = """
             scoreTexts.push({ x: x, y: y, text: text, color: color, alpha: 1, vy: -0.8 });
         }
 
+        // [수정] 16:9 박스 안의 고정 좌표계 기준 마우스 위치 변환
         function getMousePos(e) {
-            return { x: e.clientX, y: e.clientY };
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            };
         }
 
         window.addEventListener('mousedown', (e) => {
             if(!gameActive) return;
             const mousePos = getMousePos(e);
-            // 활 크기가 커짐에 따라 조작 판정선 범위도 80 -> 100으로 상향
             if(Math.hypot(mousePos.x - bowPos.x, mousePos.y - bowPos.y) < 100) {
                 isDragging = true;
                 dragStart = { x: bowPos.x, y: bowPos.y };
@@ -598,7 +607,6 @@ game_html = """
             const vy = dy * speedScale;
 
             if(vx > 0) {
-                // 겁나큰 화살일 경우 화살 크기 스케일을 95 -> 240으로 증폭
                 let aWidth = currentArrow.isGiant ? 240 : 95;
                 activeArrows.push({
                     x: bowPos.x, y: bowPos.y,
@@ -616,7 +624,7 @@ game_html = """
         let stars = [];
         function generateStars() {
             stars = [];
-            let count = Math.floor((window.innerWidth * window.innerHeight) / 25000);
+            let count = Math.floor((canvas.width * canvas.height) / 25000);
             for(let i=0; i<count; i++) {
                 stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.6});
             }
@@ -725,7 +733,7 @@ game_html = """
                 ctx.restore();
             }
 
-            // [크기 키움] 활 크기 증가 (반지름 48 -> 65, 오프셋 보정)
+            // 활 그리기
             ctx.save();
             ctx.strokeStyle = isBuffed ? "#ff0055" : "#00d2ff";
             ctx.lineWidth = 6; 
@@ -751,7 +759,6 @@ game_html = """
                 let tVx = (dragStart.x - dragEnd.x) * 0.25;
                 if (tVx > 0) { 
                     ctx.save();
-                    // 조준선 색상 설정 (기가 화살은 굵은 황금빛)
                     if(currentArrow.isGiant) {
                         ctx.strokeStyle = "rgba(255, 204, 0, 0.7)";
                         ctx.lineWidth = 5;
@@ -837,7 +844,6 @@ game_html = """
                         else if (dy <= target.radiusC) { earnedPoints = 2;  hColor = targetColor; }
                         else { earnedPoints = 1;  hColor = "#e2e8f0"; }
 
-                        // 점수 증폭 계산 (사과 화살 2배, 겁나큰 화살 3배)
                         if(arrow.isApple) { earnedPoints *= 2; hColor = "#ff2222"; }
                         else if(arrow.isGiant) { earnedPoints *= 3; hColor = "#ffcc00"; }
 
@@ -847,7 +853,6 @@ game_html = """
 
                         createScoreText(arrowTipX - 25, arrowTipY - 15, `+${totalEarned}`, hColor);
                         
-                        // 기가 화살 피격 시 화면 진동 및 폭발 극대화
                         shakeIntensity = arrow.isGiant ? 22 : 7; 
                         createExplosion(arrowTipX, arrowTipY, hColor, arrow.isGiant ? 50 : 20);
 
@@ -870,7 +875,7 @@ game_html = """
                 stx.y += stx.vy; stx.alpha -= 0.015;
                 if(stx.alpha <= 0) { scoreTexts.splice(i, 1); continue; }
                 ctx.save(); ctx.globalAlpha = stx.alpha; ctx.fillStyle = stx.color;
-                ctx.font = "bold 26px 'Segoe UI'"; ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
+                ctx.font = "bold 22px 'Segoe UI'"; ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
                 ctx.fillText(stx.text, stx.x, stx.y); ctx.restore();
             }
 
@@ -883,7 +888,6 @@ game_html = """
             ctx.translate(x, y); ctx.rotate(angle);
             let width = customWidth || 95; 
             
-            // 기가 화살, 사과 화살, 일반 화살 디자인 분기
             if (isGiant) {
                 ctx.strokeStyle = "#ffcc00";
                 ctx.lineWidth = 11; 
@@ -919,4 +923,5 @@ game_html = """
 </html>
 """
 
-components.html(game_html, height=850, scrolling=False)
+# 16:9 비율 컨테이너 높이에 맞춰 스트림릿 컴포넌트 뷰포트 여유 높이 지정
+components.html(game_html, height=720, scrolling=False)
