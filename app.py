@@ -30,7 +30,7 @@ game_html = """
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: radial-gradient(circle, #161f2b 0%, #050608 100%);
+            background: url('달.jpg') no-repeat center/cover;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
