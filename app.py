@@ -166,47 +166,55 @@ game_html = """
             box-shadow: 0 6px 20px rgba(0, 132, 255, 0.6);
         }
 
+        /* 행성 선택 컨테이너 */
         .main-planet-selector {
             display: flex;
-            gap: 15px;
+            gap: 20px;
             align-items: center;
             margin-bottom: 35px;
             background: rgba(255, 255, 255, 0.05);
-            padding: 15px 30px;
+            padding: 20px 35px;
             border-radius: 40px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .planet-circle {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid transparent;
-            transition: all 0.3s;
+        .planet-btn-wrapper {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px #000;
+            gap: 8px;
+            cursor: pointer;
         }
 
-        .planet-circle:hover {
+        .planet-canvas {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            transition: all 0.25s ease;
+            box-sizing: border-box;
+        }
+
+        .planet-btn-wrapper:hover .planet-canvas {
             transform: scale(1.15);
         }
 
-        .planet-circle.active {
-            border-color: #fff;
-            box-shadow: 0 0 18px currentColor;
-            transform: scale(1.05);
+        .planet-btn-wrapper.active .planet-canvas {
+            border-color: #ffffff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
         }
 
-        #planet-earth { background: radial-gradient(circle at 30% 30%, #2b82c9, #053057); color: #00d2ff; }
-        #planet-moon { background: radial-gradient(circle at 30% 30%, #ccc, #666); color: #ddd; }
-        #planet-mars { background: radial-gradient(circle at 30% 30%, #e03e1d, #5c1303); color: #ff6b6b; }
-        #planet-venus { background: radial-gradient(circle at 30% 30%, #e3a857, #6d3e00); color: #ffd166; }
-        #planet-europa { background: radial-gradient(circle at 30% 30%, #a5cad6, #3a5d6b); color: #98e1f5; }
+        .planet-label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #a0aec0;
+            transition: color 0.25s;
+        }
+
+        .planet-btn-wrapper.active .planet-label {
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255,255,255,0.5);
+        }
 
         #combo-wrapper {
             position: absolute;
@@ -252,14 +260,29 @@ game_html = """
         
         <div id="start-screen" class="screen-overlay">
             <h1>Gravity Arrow</h1>
-            <p style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 25px;">마우스로 각도 실시간 정밀조준 / Space 바로 강력 슈팅!</p>
+            <p style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 25px;">마우스로 실시간 조준하고 클릭해서 발사하세요!</p>
             
             <div class="main-planet-selector" id="planet-selector-bar">
-                <div id="planet-earth" class="planet-circle active" onclick="selectPlanet('earth')">지구</div>
-                <div id="planet-moon" class="planet-circle" onclick="selectPlanet('moon')">달</div>
-                <div id="planet-mars" class="planet-circle" onclick="selectPlanet('mars')">화성</div>
-                <div id="planet-venus" class="planet-circle" onclick="selectPlanet('venus')">금성</div>
-                <div id="planet-europa" class="planet-circle" onclick="selectPlanet('europa')">유로파</div>
+                <div id="wrapper-earth" class="planet-btn-wrapper active" onclick="selectPlanet('earth')">
+                    <canvas id="btn-canvas-earth" class="planet-canvas" width="60" height="60"></canvas>
+                    <div class="planet-label">지구</div>
+                </div>
+                <div id="wrapper-moon" class="planet-btn-wrapper" onclick="selectPlanet('moon')">
+                    <canvas id="btn-canvas-moon" class="planet-canvas" width="60" height="60"></canvas>
+                    <div class="planet-label">달</div>
+                </div>
+                <div id="wrapper-mars" class="planet-btn-wrapper" onclick="selectPlanet('mars')">
+                    <canvas id="btn-canvas-mars" class="planet-canvas" width="60" height="60"></canvas>
+                    <div class="planet-label">화성</div>
+                </div>
+                <div id="wrapper-venus" class="planet-btn-wrapper" onclick="selectPlanet('venus')">
+                    <canvas id="btn-canvas-venus" class="planet-canvas" width="60" height="60"></canvas>
+                    <div class="planet-label">금성</div>
+                </div>
+                <div id="wrapper-europa" class="planet-btn-wrapper" onclick="selectPlanet('europa')">
+                    <canvas id="btn-canvas-europa" class="planet-canvas" width="60" height="60"></canvas>
+                    <div class="planet-label">유로파</div>
+                </div>
             </div>
 
             <button class="btn" onclick="startGame()">게임 시작</button>
@@ -355,7 +378,6 @@ game_html = """
         let gravityScale = 0.03; 
         let currentGravity = planets[currentPlanetKey].gravity * gravityScale;
 
-        // 조준용 시스템 마우스 좌표 및 발사 세기 파워 고정값
         let mousePos = { x: 400, y: 675 / 2 };
         let currentAngle = 0;
         const shootPower = 23; 
@@ -365,21 +387,91 @@ game_html = """
         let arrowTrajectoryVisible = true;
         let blinkTimer = 0;
 
-        // [배경 엔진 전용 변수 캐싱 데이터]
         let envParticles = []; 
         let stars = [];        
 
         document.getElementById('main-high-disp').innerText = highScore;
         initCanvasSize();
 
-        // 파티클 생성 및 설정 로직 통합
+        // 메인 선택화면 행성 고유 디자인 그리기 엔진
+        function drawPlanetButtonsVisual() {
+            planetKeys.forEach(key => {
+                const pCanvas = document.getElementById(`btn-canvas-${key}`);
+                if (!pCanvas) return;
+                const pCtx = pCanvas.getContext('2d');
+                const cx = pCanvas.width / 2;
+                const cy = pCanvas.height / 2;
+                const r = pCanvas.width / 2 - 2;
+
+                pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+                pCtx.save();
+                
+                // 원형 클리핑 영역 지정
+                pCtx.beginPath();
+                pCtx.arc(cx, cy, r, 0, Math.PI * 2);
+                pCtx.clip();
+
+                if (key === 'earth') {
+                    pCtx.fillStyle = '#2b82c9'; // 파란 바다
+                    pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+                    pCtx.fillStyle = '#228b22'; // 초록 대륙
+                    pCtx.beginPath();
+                    pCtx.arc(cx - 10, cy - 5, 15, 0, Math.PI * 2);
+                    pCtx.arc(cx + 12, cy + 10, 12, 0, Math.PI * 2);
+                    pCtx.arc(cx - 5, cy + 15, 10, 0, Math.PI * 2);
+                    pCtx.fill();
+                } 
+                else if (key === 'moon') {
+                    pCtx.fillStyle = '#bbbbbb'; // 회색 본체
+                    pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+                    pCtx.fillStyle = '#666666'; // 크레이터 자국
+                    pCtx.beginPath();
+                    pCtx.arc(cx - 12, cy - 10, 5, 0, Math.PI * 2);
+                    pCtx.arc(cx + 10, cy + 8, 6, 0, Math.PI * 2);
+                    pCtx.arc(cx - 2, cy + 12, 3, 0, Math.PI * 2);
+                    pCtx.arc(cx + 5, cy - 14, 4, 0, Math.PI * 2);
+                    pCtx.fill();
+                } 
+                else if (key === 'mars') {
+                    pCtx.fillStyle = '#e03e1d'; // 주황 본체
+                    pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+                    pCtx.fillStyle = '#8b4513'; // 갈색 반점
+                    pCtx.beginPath();
+                    pCtx.arc(cx - 8, cy - 8, 7, 0, Math.PI * 2);
+                    pCtx.arc(cx + 10, cy + 10, 6, 0, Math.PI * 2);
+                    pCtx.arc(cx + 2, cy - 12, 4, 0, Math.PI * 2);
+                    pCtx.fill();
+                } 
+                else if (key === 'venus') {
+                    pCtx.fillStyle = '#ffd166'; // 노란 본체
+                    pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+                    pCtx.fillStyle = '#b8860b'; // 진노란 무늬
+                    pCtx.beginPath();
+                    pCtx.ellipse(cx, cy - 10, 20, 5, 0, 0, Math.PI * 2);
+                    pCtx.ellipse(cx + 5, cy + 8, 16, 4, Math.PI / 12, 0, Math.PI * 2);
+                    pCtx.fill();
+                } 
+                else if (key === 'europa') {
+                    pCtx.fillStyle = '#a5cad6'; // 청백색 본체
+                    pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+                    pCtx.strokeStyle = '#4682b4'; pCtx.lineWidth = 2; // 얼음 금
+                    pCtx.beginPath();
+                    pCtx.moveTo(cx - 20, cy - 20); pCtx.lineTo(cx + 20, cy + 20);
+                    pCtx.moveTo(cx + 20, cy - 15); pCtx.lineTo(cx - 15, cy + 20);
+                    pCtx.stroke();
+                }
+
+                pCtx.restore();
+            });
+        }
+
         function initEnvParticles() {
             envParticles = [];
             let count = 0;
-            if (currentPlanetKey === 'earth') count = 8;       // 구름
-            else if (currentPlanetKey === 'mars') count = 40;  // 먼지
-            else if (currentPlanetKey === 'venus') count = 65; // 모래 바람
-            else if (currentPlanetKey === 'europa') count = 90; // 눈송이
+            if (currentPlanetKey === 'earth') count = 8;       
+            else if (currentPlanetKey === 'mars') count = 40;  
+            else if (currentPlanetKey === 'venus') count = 65; 
+            else if (currentPlanetKey === 'europa') count = 90; 
 
             for (let i = 0; i < count; i++) {
                 envParticles.push(createEnvParticle(true));
@@ -404,12 +496,12 @@ game_html = """
             } else if (currentPlanetKey === 'venus') {
                 p.w = 8 + Math.random() * 25; 
                 p.h = 1.5 + Math.random() * 2;
-                p.vx = -2.5 - Math.random() * 3.5; // 우측에서 좌측으로 유속 흐름 가속화
+                p.vx = -2.5 - Math.random() * 3.5; 
                 p.vy = (Math.random() - 0.5) * 0.3;
             } else if (currentPlanetKey === 'europa') {
                 p.r = 1.0 + Math.random() * 2.8;
                 p.vx = Math.random() * 0.8 - 0.4; 
-                p.vy = 0.8 + Math.random() * 1.5; // 위에서 아래로 지속 강설
+                p.vy = 0.8 + Math.random() * 1.5; 
             }
             return p;
         }
@@ -425,9 +517,9 @@ game_html = """
             if (gameActive) return; 
             currentPlanetKey = key;
             planetKeys.forEach(k => {
-                document.getElementById(`planet-${k}`).classList.remove('active');
+                document.getElementById(`wrapper-${k}`).classList.remove('active');
             });
-            document.getElementById(`planet-${key}`).classList.add('active');
+            document.getElementById(`wrapper-${key}`).classList.add('active');
             
             document.getElementById('planet-name-disp').innerText = planets[key].name;
             currentGravity = planets[key].gravity * gravityScale;
@@ -435,8 +527,6 @@ game_html = """
             initStars();
             initEnvParticles();
         }
-
-        function withPlanet(key) { selectPlanet(key); }
 
         function startGame() {
             score = 0;
@@ -582,6 +672,7 @@ game_html = """
             scoreTexts = [];
             initStars();
             initEnvParticles();
+            drawPlanetButtonsVisual();
         }
 
         function rollNextArrow() {
@@ -633,13 +724,13 @@ game_html = """
             currentAngle = Math.atan2(mousePos.y - bowPos.y, mousePos.x - bowPos.x);
         });
 
-        // 스페이스바 전용 화살 런칭 메커니즘 통합
-        window.addEventListener('keydown', (e) => {
+        // 원래의 마우스 클릭 발사 시스템으로 복구 통합 완료
+        window.addEventListener('mousedown', (e) => {
             if (!gameActive) return;
             
-            if (e.code === 'Space') {
-                e.preventDefault(); 
-                
+            // 인게임 영역 내부 클릭 시에만 발사
+            let clickedPos = getCanvasMousePos(e);
+            if (clickedPos.x >= 0 && clickedPos.x <= canvas.width && clickedPos.y >= 0 && clickedPos.y <= canvas.height) {
                 let vx = Math.cos(currentAngle) * shootPower;
                 let vy = Math.sin(currentAngle) * shootPower;
 
@@ -659,7 +750,8 @@ game_html = """
             }
         });
 
-        // 디폴트 초기 우주 상태 설정
+        // 초기 실행 세팅
+        drawPlanetButtonsVisual();
         initStars();
         initEnvParticles();
 
@@ -674,7 +766,6 @@ game_html = """
             if (gameActive) {
                 if(target.visible) {
                     target.y += target.speed * target.dir;
-                    // 바닥 경계(-120px)를 감안한 궤도 이탈 방지 한계치 조절
                     if(target.y - target.radiusD < 40 || target.y + target.radiusD > canvas.height - 135) {
                         target.dir *= -1; 
                     }
@@ -705,7 +796,7 @@ game_html = """
                 }
             }
 
-            // [렌더링 시동 레벨 시작]
+            // 렌더링 시작
             ctx.save();
             if (shakeIntensity > 0) {
                 ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
@@ -716,16 +807,15 @@ game_html = """
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // -------------------------------------------------------------
-            // [1단계: 요청 동적 배경 및 기상 환경 렌더링 팩 복합 이식]
+            // [1단계: 요청 동적 배경 및 기상 환경 렌더링]
             // -------------------------------------------------------------
-            if (currentPlanetKey === 'earth') ctx.fillStyle = '#87CEEB'; // 지구 하늘색
-            else if (currentPlanetKey === 'moon') ctx.fillStyle = '#050505'; // 달 우주 검정
-            else if (currentPlanetKey === 'mars') ctx.fillStyle = '#cda365'; // 화성 뿌연 황토색
-            else if (currentPlanetKey === 'venus') ctx.fillStyle = '#dcb858'; // 금성 진노란색
-            else if (currentPlanetKey === 'europa') ctx.fillStyle = '#b0e0e6'; // 유로파 뿌연 하늘색
+            if (currentPlanetKey === 'earth') ctx.fillStyle = '#87CEEB'; 
+            else if (currentPlanetKey === 'moon') ctx.fillStyle = '#050505'; 
+            else if (currentPlanetKey === 'mars') ctx.fillStyle = '#cda365'; 
+            else if (currentPlanetKey === 'venus') ctx.fillStyle = '#dcb858'; 
+            else if (currentPlanetKey === 'europa') ctx.fillStyle = '#b0e0e6'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 별무리 드로잉 (달 및 지구 전용 조건 처리)
             if (currentPlanetKey === 'moon' || currentPlanetKey === 'earth') {
                 ctx.fillStyle = "rgba(255,255,255,0.48)";
                 stars.forEach(s => {
@@ -733,11 +823,9 @@ game_html = """
                 });
             }
 
-            // 날씨 환경 유동 파티클 시뮬레이터 가동
             envParticles.forEach(p => {
                 p.x += p.vx; p.y += p.vy;
 
-                // 화면 탈출 루프 제어
                 if (currentPlanetKey === 'venus' && p.x < -p.w) {
                     p.x = canvas.width + p.w; p.y = Math.random() * (canvas.height - 120);
                 } else if (p.x > canvas.width + 120) {
@@ -749,7 +837,6 @@ game_html = """
                     p.y = -10; p.x = Math.random() * canvas.width;
                 }
 
-                // 행성별 날씨 비주얼라이저
                 if (currentPlanetKey === 'earth') {
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
                     ctx.beginPath(); ctx.ellipse(p.x, p.y, p.w/2, p.h/2, 0, 0, Math.PI*2); ctx.fill();
@@ -759,10 +846,10 @@ game_html = """
                     ctx.fillStyle = 'rgba(160, 82, 45, 0.45)';
                     ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
                 } else if (currentPlanetKey === 'venus') {
-                    ctx.fillStyle = 'rgba(150, 105, 15, 0.55)'; // 진노란색 바람 띠 흐름
+                    ctx.fillStyle = 'rgba(150, 105, 15, 0.55)'; 
                     ctx.fillRect(p.x, p.y, p.w, p.h);
                 } else if (currentPlanetKey === 'europa') {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)'; // 끊임없이 내리는 흰 눈송이
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)'; 
                     ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
                 }
             });
@@ -773,19 +860,19 @@ game_html = """
             }
 
             // -------------------------------------------------------------
-            // [2단계: 요청된 하단 지형 디자인 정밀화]
+            // [2단계: 요청된 하단 지형 디자인]
             // -------------------------------------------------------------
             let groundHeight = 120;
             let gY = canvas.height - groundHeight;
 
             if (currentPlanetKey === 'earth') {
-                ctx.fillStyle = '#654321'; // 지구 흙바닥
+                ctx.fillStyle = '#654321'; 
                 ctx.fillRect(0, gY, canvas.width, groundHeight);
-                ctx.fillStyle = '#228b22'; // 초록 상단 잔디 지형 고속 생성
+                ctx.fillStyle = '#228b22'; 
                 ctx.fillRect(0, gY, canvas.width, 16);
             }
             else if (currentPlanetKey === 'moon') {
-                ctx.fillStyle = '#444444'; // 울퉁불퉁한 회색 달 지형
+                ctx.fillStyle = '#444444'; 
                 ctx.beginPath();
                 ctx.moveTo(0, gY);
                 for(let i=0; i<=canvas.width; i+=40) {
@@ -794,7 +881,7 @@ game_html = """
                 ctx.lineTo(canvas.width, canvas.height); ctx.lineTo(0, canvas.height); ctx.fill();
             }
             else if (currentPlanetKey === 'mars') {
-                ctx.fillStyle = '#8b4513'; // 갈색 계열 곡선형 화성 표면
+                ctx.fillStyle = '#8b4513'; 
                 ctx.beginPath();
                 ctx.moveTo(0, gY);
                 for(let i=0; i<=canvas.width; i+=50) {
@@ -803,14 +890,13 @@ game_html = """
                 ctx.lineTo(canvas.width, canvas.height); ctx.lineTo(0, canvas.height); ctx.fill();
             }
             else if (currentPlanetKey === 'venus') {
-                ctx.fillStyle = '#b8860b'; // 노란색 평평한 금성 황무지
+                ctx.fillStyle = '#b8860b'; 
                 ctx.fillRect(0, gY, canvas.width, groundHeight);
             }
             else if (currentPlanetKey === 'europa') {
-                ctx.fillStyle = '#e0ffff'; // 유로파 빙판 깔기
+                ctx.fillStyle = '#e0ffff'; 
                 ctx.fillRect(0, gY, canvas.width, groundHeight);
                 
-                // 얼음 크랙(금 간 흔적 표현식 설계)
                 ctx.strokeStyle = '#87cefa'; ctx.lineWidth = 3;
                 ctx.beginPath(); ctx.moveTo(90, gY); ctx.lineTo(160, canvas.height - 50); ctx.lineTo(240, canvas.height - 15); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(430, gY); ctx.lineTo(390, canvas.height - 40); ctx.lineTo(490, canvas.height - 5); ctx.stroke();
@@ -819,7 +905,7 @@ game_html = """
             }
 
             // -------------------------------------------------------------
-            // [3단계: 행성 자체 비주얼 디테일 커스텀화 레이어 구현]
+            // [3단계: 과녁 행성 자체 비주얼 디테일 커스텀화]
             // -------------------------------------------------------------
             const skewX = 0.25; 
             const frontX = target.x - (target.radiusD * skewX); 
@@ -827,31 +913,24 @@ game_html = """
 
             if(target.visible) {
                 ctx.save();
-                // 중심 지지대 축선 렌더링
                 ctx.strokeStyle = "rgba(40, 50, 70, 0.5)"; ctx.lineWidth = 5;
                 ctx.beginPath(); ctx.moveTo(target.x + 5, target.y - target.radiusD); ctx.lineTo(target.x + 5, target.y + target.radiusD); ctx.stroke();
 
-                // 타겟 본체 베이스 섀도우 처리
                 ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
                 ctx.beginPath(); ctx.ellipse(target.x, target.y, (target.radiusD + 4) * skewX, target.radiusD + 4, 0, 0, Math.PI * 2); ctx.fill();
 
-                // 외곽 링 가이드 라인 형성
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath(); ctx.ellipse(target.x, target.y, target.radiusD * skewX, target.radiusD, 0, 0, Math.PI * 2); ctx.fill(); 
                 
-                // [행성 스킨 데코레이션 내부 코어 드로잉 팩]
                 ctx.save();
-                // 구체 마스킹 효과 간접 유도 처리
                 ctx.beginPath();
                 ctx.ellipse(target.x, target.y, target.radiusC * skewX, target.radiusC, 0, 0, Math.PI * 2);
-                ctx.clip(); // 안쪽 서클만 렌더링하도록 커팅 클리핑
+                ctx.clip(); 
 
                 if (currentPlanetKey === 'earth') {
-                    // 초록색 대륙과 파란색 바다가 혼재된 텍스처 조합
-                    ctx.fillStyle = '#2b82c9'; // 기본 바다색
+                    ctx.fillStyle = '#2b82c9'; 
                     ctx.fillRect(target.x - 100, target.y - 150, 200, 300);
-                    
-                    ctx.fillStyle = '#228b22'; // 대륙 형태 임의 폴리곤 드로잉
+                    ctx.fillStyle = '#228b22'; 
                     ctx.beginPath();
                     ctx.ellipse(target.x - 10, target.y - 20, 25, 45, Math.PI/6, 0, Math.PI*2);
                     ctx.ellipse(target.x + 20, target.y + 30, 20, 35, -Math.PI/4, 0, Math.PI*2);
@@ -859,11 +938,9 @@ game_html = """
                     ctx.fill();
                 } 
                 else if (currentPlanetKey === 'moon') {
-                    // 회색 스킨 베이스에 검은 자국(크레이터 표면) 형성
                     ctx.fillStyle = '#bbbbbb';
                     ctx.fillRect(target.x - 100, target.y - 150, 200, 300);
-                    
-                    ctx.fillStyle = '#555555'; // 어두운 자국 분포
+                    ctx.fillStyle = '#555555'; 
                     ctx.beginPath();
                     ctx.arc(target.x - 12, target.y - 30, 14, 0, Math.PI*2);
                     ctx.arc(target.x + 15, target.y + 10, 18, 0, Math.PI*2);
@@ -872,10 +949,8 @@ game_html = """
                     ctx.fill();
                 } 
                 else if (currentPlanetKey === 'mars') {
-                    // 주황색 베이스에 갈색 반점
                     ctx.fillStyle = '#e03e1d';
                     ctx.fillRect(target.x - 100, target.y - 150, 200, 300);
-                    
                     ctx.fillStyle = '#8b4513';
                     ctx.beginPath();
                     ctx.ellipse(target.x - 15, target.y - 15, 16, 25, Math.PI/3, 0, Math.PI*2);
@@ -884,10 +959,8 @@ game_html = """
                     ctx.fill();
                 } 
                 else if (currentPlanetKey === 'venus') {
-                    // 노란색 바탕 위 진노란색 무늬 반점 형성
                     ctx.fillStyle = '#ffd166';
                     ctx.fillRect(target.x - 100, target.y - 150, 200, 300);
-                    
                     ctx.fillStyle = '#b8860b';
                     ctx.beginPath();
                     ctx.ellipse(target.x - 5, target.y - 40, 25, 12, 0, 0, Math.PI*2);
@@ -896,11 +969,8 @@ game_html = """
                     ctx.fill();
                 } 
                 else if (currentPlanetKey === 'europa') {
-                    // 청백색 기본 바탕색 유지 
                     ctx.fillStyle = '#a5cad6';
                     ctx.fillRect(target.x - 100, target.y - 150, 200, 300);
-                    
-                    // 표면 얼음 실선 패턴 추가 레이어링
                     ctx.strokeStyle = '#4682b4'; ctx.lineWidth = 2.5;
                     ctx.beginPath();
                     ctx.moveTo(target.x - 30, target.y - 80); ctx.lineTo(target.x + 30, target.y + 80);
@@ -909,7 +979,6 @@ game_html = """
                 }
                 ctx.restore();
 
-                // 중앙 정밀 과녁 코어 스팟 마크(B 및 A 노드 스케일 재적용)
                 ctx.fillStyle = "#ff3e3e";
                 ctx.beginPath(); ctx.ellipse(target.x, target.y, target.radiusB * skewX, target.radiusB, 0, 0, Math.PI * 2); ctx.fill();
                 
@@ -918,7 +987,6 @@ game_html = """
                 ctx.restore();
             }
 
-            // 각성용 보스 메테오 전술 투입 액션
             if(meteor.active) {
                 ctx.save();
                 ctx.fillStyle = "rgba(239, 68, 68, 0.25)";
@@ -932,7 +1000,6 @@ game_html = """
                 ctx.restore();
             }
 
-            // 활 유닛 물리적 렌더링
             ctx.save();
             ctx.translate(bowPos.x, bowPos.y);
             ctx.rotate(currentAngle);
@@ -948,12 +1015,10 @@ game_html = """
             ctx.beginPath(); ctx.moveTo(-15, -65); ctx.lineTo(-15, 65); ctx.stroke();
             ctx.restore();
 
-            // 대기실 활시위 장전용 화살 표시
             if(gameActive) {
                 drawArrowIcon(bowPos.x, bowPos.y, currentAngle, currentArrow.isApple, currentArrow.isGiant, currentArrow.isGiant ? 240 : 95);
             }
 
-            // 상시 다이내믹 포인터 궤적 가이드 드로잉 엔진 작동
             if (arrowTrajectoryVisible && gameActive) {
                 let tVx = Math.cos(currentAngle) * shootPower;
                 if (tVx > 0) { 
@@ -981,7 +1046,6 @@ game_html = """
                 }
             }
 
-            // 날아가고 있는 활체 충돌 컴포넌트 실시간 진단 루프
             for (let i = activeArrows.length - 1; i >= 0; i--) {
                 let arrow = activeArrows[i];
                 
@@ -1059,7 +1123,6 @@ game_html = """
                 }
             }
 
-            // 폭발 조각 애니메이션 루프 업데이트
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
@@ -1068,7 +1131,6 @@ game_html = """
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill(); ctx.restore();
             }
 
-            // 상단 플로팅 텍스트 스코어 보드 업데이트
             for (let i = scoreTexts.length - 1; i >= 0; i--) {
                 let stx = scoreTexts[i];
                 stx.y += stx.vy; stx.alpha -= 0.015;
@@ -1082,7 +1144,6 @@ game_html = """
             gameInterval = requestAnimationFrame(update);
         }
 
-        // 개별 유동 화살 형태 아이콘 벡터 렌더러 함수
         function drawArrowIcon(x, y, angle, isApple, isGiant, customWidth) {
             ctx.save();
             ctx.translate(x, y); ctx.rotate(angle);
@@ -1101,7 +1162,7 @@ game_html = """
             } else {
                 ctx.strokeStyle = isApple ? "#ff3333" : "#e2e8f0";
                 ctx.lineWidth = isApple ? 5.5 : 4.5; 
-                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(width/2, 0); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(width/2, 0); stroke();
 
                 ctx.fillStyle = isApple ? "#ff0000" : "#cbd5e1";
                 ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2 - 15, -8); ctx.lineTo(width/2 - 15, 8); ctx.closePath(); ctx.fill();
