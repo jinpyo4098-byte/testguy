@@ -91,7 +91,6 @@ game_html = """
             line-height: 1.6;
         }
 
-        /* 인게임 상태창 UI 패널 */
         .ui-panel {
             position: absolute;
             top: 20px;
@@ -120,7 +119,6 @@ game_html = """
             text-align: center;
         }
 
-        /* 시간 게이지바 컨테이너 */
         .progress-container {
             width: 100%;
             height: 14px;
@@ -130,7 +128,6 @@ game_html = """
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* 시간 게이지바 본체 */
         .progress-bar {
             height: 100%;
             width: 100%;
@@ -139,7 +136,6 @@ game_html = """
             transition: width 0.1s linear, background 0.3s;
         }
 
-        /* 폭주/버프 상태일 때 게이지 컬러 체인지 연출 */
         .progress-bar.buffed {
             background: linear-gradient(90deg, #ff0055, #ffcc00) !important;
             box-shadow: 0 0 15px #ff0055 !important;
@@ -199,7 +195,7 @@ game_html = """
             transform: scale(1.05);
         }
 
-        #planet-earth { background: url('/static/1231.jpg') no-repeat center/contain; }
+        #planet-earth { background: radial-gradient(circle at 30% 30%, #2b82c9, #053057); color: #00d2ff; }
         #planet-moon { background: radial-gradient(circle at 30% 30%, #ccc, #666); color: #ddd; }
         #planet-mars { background: radial-gradient(circle at 30% 30%, #e03e1d, #5c1303); color: #ff6b6b; }
         #planet-venus { background: radial-gradient(circle at 30% 30%, #e3a857, #6d3e00); color: #ffd166; }
@@ -224,7 +220,6 @@ game_html = """
             margin: 0;
         }
 
-        /* 능력 활성화 알림 오버레이 텍스트 스타일 */
         #buff-alert {
             position: absolute;
             top: 120px;
@@ -300,7 +295,7 @@ game_html = """
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
-            bowPos.x = 120; 
+            bowPos.x = 100; 
             bowPos.y = canvas.height / 2;
             target.x = canvas.width - 150; 
         }
@@ -315,20 +310,17 @@ game_html = """
         const planetKeys = ['earth', 'moon', 'mars', 'venus', 'europa'];
         let currentPlanetKey = 'earth';
 
-        // 게임 제어 변수
         let score = 0;
         let highScore = localStorage.getItem('gravity_arrow_high') || 0;
-        const totalDuration = 30; // 총 30초 게임
+        const totalDuration = 30; 
         let timeLeft = 30;
         let gameActive = false;
         let gameInterval;
         let timerInterval;
 
-        // 버프(능력구현) 및 특수 오브젝트 관련 데이터
-        let buffTimer = 0; // 버프 지속 프레임 타이머
+        let buffTimer = 0; 
         let isBuffed = false;
 
-        // 운석 객체 데이터 구조 설계
         let meteor = {
             x: 0,
             y: 0,
@@ -339,7 +331,6 @@ game_html = """
             destroyed: false
         };
 
-        // 과녁 세팅 전역변수화 관리
         let target = {
             x: window.innerWidth - 150,
             y: window.innerHeight / 2,
@@ -361,8 +352,7 @@ game_html = """
         let gravityScale = 0.03; 
         let currentGravity = planets[currentPlanetKey].gravity * gravityScale;
 
-        // 궁수(사람) 상태 및 외형 관리 데이터
-        const bowPos = { x: 120, y: window.innerHeight / 2 };
+        const bowPos = { x: 100, y: window.innerHeight / 2 };
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
         let dragEnd = { x: 0, y: 0 };
@@ -405,12 +395,10 @@ game_html = """
             document.getElementById('buff-alert').classList.add('hidden');
             document.getElementById('time-progress').classList.remove('buffed');
 
-            // 과녁 상태 복구 원상복귀
             target.visible = true;
             target.respawnTimer = 0;
             resetTargetSpecification(false);
 
-            // 운석 리셋
             meteor.active = false;
             meteor.destroyed = false;
 
@@ -431,7 +419,6 @@ game_html = """
                 timeLeft--;
                 updateProgressBar();
 
-                // 정확히 15초가 되었을 때 운석 리스폰 작동 개시
                 if(timeLeft === 15 && !meteor.destroyed) {
                     spawnMeteor();
                 }
@@ -452,27 +439,25 @@ game_html = """
 
         function spawnMeteor() {
             meteor.x = canvas.width + 50;
-            meteor.y = 80; // 우측 상단에서 스폰
+            meteor.y = 80; 
             
-            // 사람(궁수)의 보정 좌표를 향해 날아가도록 속도 연산 제어 (매우 천천히 기어옴)
             let dx = bowPos.x - meteor.x;
             let dy = bowPos.y - meteor.y;
             let distance = Math.hypot(dx, dy);
             
-            let slowSpeed = 1.3; // 천천히 비행
+            let slowSpeed = 1.3; 
             meteor.vx = (dx / distance) * slowSpeed;
             meteor.vy = (dy / distance) * slowSpeed;
             meteor.active = true;
         }
 
-        // 각성 모드 전환에 따른 스펙 설정 함수 구현
         function resetTargetSpecification(buffActive) {
             if(buffActive) {
-                target.radiusD = target.baseRadiusD * 1.5; // 과녁 크기 1.5배 확장 증가
+                target.radiusD = target.baseRadiusD * 1.5; 
                 target.radiusC = 62 * 1.5;
                 target.radiusB = 38 * 1.5;
                 target.radiusA = 15 * 1.5;
-                target.speed = target.baseSpeed * 0.4; // 이동 속도 대폭 슬로우 감소 감속 조치
+                target.speed = target.baseSpeed * 0.4; 
             } else {
                 target.radiusD = target.baseRadiusD;
                 target.radiusC = 62;
@@ -484,7 +469,7 @@ game_html = """
 
         function activateAbilityBuff() {
             isBuffed = true;
-            buffTimer = 300; // 60fps * 5초 = 300프레임 동안 유지 연산 적용
+            buffTimer = 480; // [수정] 60fps * 8초 = 480프레임 동안 유지
             resetTargetSpecification(true);
             document.getElementById('buff-alert').classList.remove('hidden');
             document.getElementById('time-progress').classList.add('buffed');
@@ -571,8 +556,7 @@ game_html = """
         window.addEventListener('mousedown', (e) => {
             if(!gameActive) return;
             const mousePos = getMousePos(e);
-            // 활터 및 사람 캐릭터 조작 영역 보정치 체크 감지
-            if(Math.hypot(mousePos.x - bowPos.x, mousePos.y - bowPos.y) < 110) {
+            if(Math.hypot(mousePos.x - bowPos.x, mousePos.y - bowPos.y) < 80) {
                 isDragging = true;
                 dragStart = { x: bowPos.x, y: bowPos.y };
                 dragEnd = { x: mousePos.x, y: mousePos.y };
@@ -620,67 +604,7 @@ game_html = """
         }
         generateStars();
 
-        // [사람(궁수) 그리기 함수 벡터 드로잉 구현]
-        function drawArcherCharacter(dragOffsetAngle) {
-            ctx.save();
-            ctx.translate(bowPos.x - 45, bowPos.y); // 위치 이동 설정
-            
-            // 드래그 세기에 맞춰 상체가 뒤로 기울어지는 틸팅 연출
-            let tilt = isDragging ? dragOffsetAngle * 0.4 : 0;
-            ctx.rotate(tilt);
-
-            ctx.lineWidth = 3.5;
-            ctx.strokeStyle = "#ffffff";
-            ctx.fillStyle = "#1e293b";
-
-            // 1. 다리 구조선
-            ctx.beginPath();
-            ctx.moveTo(-10, 60); ctx.lineTo(-15, 95); // 왼다리
-            ctx.moveTo(10, 60); ctx.lineTo(15, 95);  // 오른다리
-            ctx.stroke();
-
-            // 2. 몸통 토르소 디자인
-            ctx.fillStyle = "#2d3748";
-            ctx.beginPath();
-            ctx.moveTo(-15, 10); ctx.lineTo(15, 10);
-            ctx.lineTo(10, 60); ctx.lineTo(-10, 60);
-            ctx.closePath();
-            ctx.fill(); ctx.stroke();
-
-            // 3. 머리 헤드
-            ctx.fillStyle = "#e2e8f0";
-            ctx.beginPath();
-            ctx.arc(0, -12, 14, 0, Math.PI*2);
-            ctx.fill(); ctx.stroke();
-
-            // 4. 활시위를 당기는 팔 그래픽 표현 제어 루프
-            ctx.strokeStyle = "#e2e8f0";
-            if(isDragging) {
-                // 앞팔 (활 조준 방향 연장선)
-                ctx.beginPath();
-                ctx.moveTo(12, 22);
-                ctx.lineTo(40, 10);
-                ctx.stroke();
-
-                // 뒷팔 (시위 당김 가속선)
-                ctx.beginPath();
-                ctx.moveTo(-12, 22);
-                let pullX = (dragEnd.x - dragStart.x) * 0.2;
-                let pullY = (dragEnd.y - dragStart.y) * 0.2;
-                ctx.lineTo(-25 + pullX, 22 + pullY);
-                ctx.stroke();
-            } else {
-                ctx.beginPath();
-                ctx.moveTo(12, 22); ctx.lineTo(35, 15);
-                ctx.moveTo(-12, 22); ctx.lineTo(10, 35);
-                ctx.stroke();
-            }
-
-            ctx.restore();
-        }
-
         function update() {
-            // 능력치 유지시간 프레임 차감 연산 진행
             if (gameActive && isBuffed) {
                 buffTimer--;
                 if(buffTimer <= 0) {
@@ -689,23 +613,19 @@ game_html = """
             }
 
             if (gameActive) {
-                // 과녁이 살아있을 때만 움직임 가동
                 if(target.visible) {
                     target.y += target.speed * target.dir;
                     if(target.y - target.radiusD < 140 || target.y + target.radiusD > canvas.height - 40) {
                         target.dir *= -1; 
                     }
                 } else {
-                    // 과녁 소멸 리스폰 대기 연산 타이머 작동 처리
                     target.respawnTimer--;
                     if(target.respawnTimer <= 0) {
-                        // 랜덤 y축 지점에 투핑 리스폰 재생성
                         target.y = 180 + Math.random() * (canvas.height - 320);
                         target.visible = true;
                     }
                 }
 
-                // 사과 화살 깜빡이 갱신
                 if(currentArrow.isApple) {
                     appleTimer++;
                     if(appleTimer % 45 === 0) {
@@ -713,12 +633,10 @@ game_html = """
                     }
                 }
 
-                // 운석 이동 물리엔진 연산구간
                 if(meteor.active) {
                     meteor.x += meteor.vx;
                     meteor.y += meteor.vy;
 
-                    // 만약 플레이어 캐릭터 위치 근처 한계점에 도달하면 파괴 처리 (피격 실패)
                     if(meteor.x < bowPos.x - 20) {
                         meteor.active = false;
                         createExplosion(meteor.x, meteor.y, "#94a3b8", 30);
@@ -736,26 +654,21 @@ game_html = """
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 우주 성운 입자 시각화
             ctx.fillStyle = "rgba(255,255,255,0.35)";
             stars.forEach(s => {
                 ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
             });
 
-            // 각성 버프 모드 돌입 시 붉은색 스크린 연출 처리 필터링
             if(isBuffed && gameActive) {
                 ctx.fillStyle = "rgba(255, 62, 62, 0.04)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // [운석(Meteor) 그리기 섹션 추가]
             if(meteor.active) {
                 ctx.save();
-                // 네온 방열 이펙트 연출 트레일 테두리 그리기
                 ctx.fillStyle = "rgba(239, 68, 68, 0.25)";
                 ctx.beginPath(); ctx.arc(meteor.x, meteor.y, meteor.radius + 12 + Math.random()*6, 0, Math.PI*2); ctx.fill();
 
-                // 마그마 본체 스피어 드로잉
                 let grad = ctx.createRadialGradient(meteor.x - 10, meteor.y - 10, 5, meteor.x, meteor.y, meteor.radius);
                 grad.addColorStop(0, '#ff9e00'); grad.addColorStop(0.6, '#d946ef'); grad.addColorStop(1, '#450a0a');
                 ctx.fillStyle = grad;
@@ -764,7 +677,6 @@ game_html = """
                 ctx.restore();
             }
 
-            // [과녁 렌더링 - 조건부 투명성 처리 반영]
             const targetColor = planets[currentPlanetKey].color;
             const skewX = 0.25; 
             const frontX = target.x - (target.radiusD * skewX); 
@@ -794,11 +706,7 @@ game_html = """
                 ctx.restore();
             }
 
-            // 궁수 캐릭터 연동 인터페이스 로드 구현
-            let dragAngle = Math.atan2(dragStart.y - dragEnd.y, dragStart.x - dragEnd.x);
-            drawArcherCharacter(dragAngle);
-
-            // 활과 활시위 레이아웃 드로잉 포지션 업데이트 보정
+            // 활 그리기 (사람 캐릭터 파트 완전히 삭제)
             ctx.save();
             ctx.strokeStyle = isBuffed ? "#ff0055" : "#00d2ff";
             ctx.lineWidth = 5; 
@@ -820,7 +728,6 @@ game_html = """
                 drawArrowIcon(bowPos.x, bowPos.y, 0, currentArrow.isApple);
             }
 
-            // 포물선 가이드라인 궤적 트래킹 연산 루프
             if (isDragging && appleTrajectoryVisible && gameActive) {
                 let tVx = (dragStart.x - dragEnd.x) * 0.25;
                 if (tVx > 0) { 
@@ -840,11 +747,11 @@ game_html = """
                     }
                     ctx.stroke(); ctx.restore();
 
+                    let dragAngle = Math.atan2(dragStart.y - dragEnd.y, dragStart.x - dragEnd.x);
                     drawArrowIcon(dragEnd.x, dragEnd.y, dragAngle, currentArrow.isApple);
                 }
             }
 
-            // 화살 배열 투사체 순회 및 처리구간
             for (let i = activeArrows.length - 1; i >= 0; i--) {
                 let arrow = activeArrows[i];
                 
@@ -858,7 +765,6 @@ game_html = """
                 let arrowTipX = arrow.x + Math.cos(arrowAngle) * (arrow.width / 2);
                 let arrowTipY = arrow.y + Math.sin(arrowAngle) * (arrow.width / 2);
 
-                // 화면 경계 바깥 탈출 스캔 검사 연산 처리
                 if (arrow.x > canvas.width + 50 || arrow.y > canvas.height + 50 || arrow.y < -50) {
                     if(!arrow.handled) {
                         combo = 0; document.getElementById('combo-wrapper').classList.add('hidden');
@@ -867,33 +773,29 @@ game_html = """
                     continue;
                 }
 
-                // 충돌 처리 루프 1단계: 특수 운석 충돌 트래킹 검증
                 if(meteor.active) {
                     let distToMeteor = Math.hypot(arrowTipX - meteor.x, arrowTipY - meteor.y);
                     if(distToMeteor <= meteor.radius + 10) {
                         meteor.active = false;
                         meteor.destroyed = true;
-                        activeArrows.splice(i, 1); // 투사체 소멸
+                        activeArrows.splice(i, 1); 
 
                         createExplosion(meteor.x, meteor.y, "#ffcc00", 40);
                         createScoreText(meteor.x, meteor.y, "AWAKENING!!", "#ffcc00");
                         
-                        // 각성 버프 패시브 능력 활성화 가동 스위치 온
                         activateAbilityBuff();
                         continue;
                     }
                 }
 
-                // 충돌 처리 루프 2단계: 메인 과녁 충돌 트래킹 감지 검사 (과녁이 눈에 보일 때만 판정 인정)
                 if (target.visible && arrowTipX >= frontX && arrowTipX <= backX + 15 && arrow.vx > 0) {
                     let dy = Math.abs(arrowTipY - target.y);
 
                     if (dy <= target.radiusD) {
                         arrow.handled = true;
                         
-                        // [요청 수정사항 핵심]: 화살 고정 삭제 대신 과녁 소멸 트리거 발동 처리 기믹 가동
                         target.visible = false;
-                        target.respawnTimer = 45; // 45프레임 뒤 재배치 재생성 처리 지시
+                        target.respawnTimer = 45; 
 
                         combo++;
                         if(combo > maxCombo) maxCombo = combo;
@@ -919,13 +821,12 @@ game_html = """
                         shakeIntensity = 7; 
                         createExplosion(arrowTipX, arrowTipY, hColor, 20);
 
-                        activeArrows.splice(i, 1); // 화살은 바로 소거 처리
+                        activeArrows.splice(i, 1); 
                         continue;
                     }
                 }
             }
 
-            // 파티클 엔진
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
@@ -934,7 +835,6 @@ game_html = """
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill(); ctx.restore();
             }
 
-            // 스코어 보정용 부유 텍스트
             for (let i = scoreTexts.length - 1; i >= 0; i--) {
                 let stx = scoreTexts[i];
                 stx.y += stx.vy; stx.alpha -= 0.015;
