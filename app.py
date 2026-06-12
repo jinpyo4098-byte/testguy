@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 스트림릿 페이지 설정 및 여백 제거
-st.set_page_config(page_title="Gravity Arrow - 16:9", layout="wide")
+st.set_page_config(page_title="Gravity Arrow - Rotation & Space", layout="wide")
 st.markdown(
     """
     <style>
@@ -37,7 +37,6 @@ game_html = """
             justify-content: center;
         }
 
-        /* [수정] 16:9 비율 고정 컨테이너 정의 */
         #game-wrapper {
             position: relative;
             width: 1200px;
@@ -253,7 +252,7 @@ game_html = """
         
         <div id="start-screen" class="screen-overlay">
             <h1>Gravity Arrow</h1>
-            <p style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 25px;">행성을 선택하고 15초에 등장하는 운석을 파괴해 각성하세요!</p>
+            <p style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 25px;">[조작 변경] 마우스로 각도 조절 / 스페이스바로 발사!</p>
             
             <div class="main-planet-selector" id="planet-selector-bar">
                 <div id="planet-earth" class="planet-circle active" onclick="selectPlanet('earth')">지구</div>
@@ -300,15 +299,12 @@ game_html = """
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
-        // [수정] 16:9 컨테이너 고정 스케일에 맞춘 좌표 할당
-        const bowPos = { x: 250, y: 675 / 2 }; 
+        const bowPos = { x: 200, y: 675 / 2 }; 
 
         function initCanvasSize() {
-            // 브라우저 크기와 독립적으로 해상도를 1200x675 고정값 설계
             canvas.width = 1200;
             canvas.height = 675;
-            
-            bowPos.x = 250; 
+            bowPos.x = 200; 
             bowPos.y = canvas.height / 2;
             target.x = canvas.width - 150; 
         }
@@ -335,13 +331,7 @@ game_html = """
         let isBuffed = false;
 
         let meteor = {
-            x: 0,
-            y: 0,
-            vx: 0,
-            vy: 0,
-            radius: 45,
-            active: false,
-            destroyed: false
+            x: 0, y: 0, vx: 0, vy: 0, radius: 45, active: false, destroyed: false
         };
 
         let target = {
@@ -365,10 +355,11 @@ game_html = """
         let gravityScale = 0.03; 
         let currentGravity = planets[currentPlanetKey].gravity * gravityScale;
 
-        let isDragging = false;
-        let dragStart = { x: 0, y: 0 };
-        let dragEnd = { x: 0, y: 0 };
-        
+        // [수정] 신규 조작용 변수: 실시간 마우스 위치 및 조준 각도
+        let mousePos = { x: 400, y: 675 / 2 };
+        let currentAngle = 0;
+        const shootPower = 23; // 화살 발사 기본 속도 세기 파워값 고정
+
         let activeArrows = [];
         let currentArrow = { isApple: false, isGiant: false };
         let arrowTrajectoryVisible = true;
@@ -387,7 +378,6 @@ game_html = """
             
             document.getElementById('planet-name-disp').innerText = planets[key].name;
             currentGravity = planets[key].gravity * gravityScale;
-            
             generateStars(); 
         }
 
@@ -569,8 +559,7 @@ game_html = """
             scoreTexts.push({ x: x, y: y, text: text, color: color, alpha: 1, vy: -0.8 });
         }
 
-        // [수정] 16:9 박스 안의 고정 좌표계 기준 마우스 위치 변환
-        function getMousePos(e) {
+        function getCanvasMousePos(e) {
             const rect = canvas.getBoundingClientRect();
             return {
                 x: (e.clientX - rect.left) * (canvas.width / rect.width),
@@ -578,46 +567,37 @@ game_html = """
             };
         }
 
-        window.addEventListener('mousedown', (e) => {
-            if(!gameActive) return;
-            const mousePos = getMousePos(e);
-            if(Math.hypot(mousePos.x - bowPos.x, mousePos.y - bowPos.y) < 100) {
-                isDragging = true;
-                dragStart = { x: bowPos.x, y: bowPos.y };
-                dragEnd = { x: mousePos.x, y: mousePos.y };
-            }
-        });
-
+        // [수정] 마우스가 움직일 때마다 실시간으로 각도를 계산하여 갱신
         window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const mousePos = getMousePos(e);
-            dragEnd = { x: mousePos.x, y: mousePos.y };
+            mousePos = getCanvasMousePos(e);
+            currentAngle = Math.atan2(mousePos.y - bowPos.y, mousePos.x - bowPos.x);
         });
 
-        window.addEventListener('mouseup', (e) => {
-            if (!isDragging) return;
-            isDragging = false;
+        // [수정] 스페이스바를 누르면 조준된 각도로 화살이 즉시 날아가도록 이벤트 추가
+        window.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault(); // 스페이스바를 누를 때 웹브라우저 창이 아래로 스크롤되는 기본 기능 차단
+                
+                // 마우스 방향 벡터 구하기
+                let vx = Math.cos(currentAngle) * shootPower;
+                let vy = Math.sin(currentAngle) * shootPower;
 
-            const dx = dragStart.x - dragEnd.x; 
-            const dy = dragStart.y - dragEnd.y;
-            if (dx <= 0) return; 
-
-            const speedScale = 0.25; 
-            const vx = dx * speedScale; 
-            const vy = dy * speedScale;
-
-            if(vx > 0) {
-                let aWidth = currentArrow.isGiant ? 240 : 95;
-                activeArrows.push({
-                    x: bowPos.x, y: bowPos.y,
-                    vx: vx, vy: vy,
-                    isApple: currentArrow.isApple,
-                    isGiant: currentArrow.isGiant,
-                    width: aWidth, height: 5,
-                    collided: false,
-                    handled: false 
-                });
-                rollNextArrow(); 
+                // 오른쪽 방향 조준 시에만 발사 가능 규칙 유지
+                if (vx > 0) {
+                    let aWidth = currentArrow.isGiant ? 240 : 95;
+                    activeArrows.push({
+                        x: bowPos.x, y: bowPos.y,
+                        vx: vx, vy: vy,
+                        isApple: currentArrow.isApple,
+                        isGiant: currentArrow.isGiant,
+                        width: aWidth, height: 5,
+                        collided: false,
+                        handled: false 
+                    });
+                    rollNextArrow(); 
+                }
             }
         });
 
@@ -733,30 +713,33 @@ game_html = """
                 ctx.restore();
             }
 
-            // 활 그리기
+            // [수정] 활 그리기: 현재 각도(currentAngle)에 맞춰 회전하도록 변환 매트릭스 적용
             ctx.save();
+            ctx.translate(bowPos.x, bowPos.y);
+            ctx.rotate(currentAngle);
+            
             ctx.strokeStyle = isBuffed ? "#ff0055" : "#00d2ff";
             ctx.lineWidth = 6; 
             ctx.beginPath();
-            ctx.arc(bowPos.x - 15, bowPos.y, 65, -Math.PI/2, Math.PI/2); 
+            ctx.arc(-15, 0, 65, -Math.PI/2, Math.PI/2); 
             ctx.stroke();
             
             ctx.strokeStyle = "rgba(255,255,255,0.5)";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(bowPos.x - 15, bowPos.y - 65);
-            if(isDragging) ctx.lineTo(dragEnd.x, dragEnd.y);
-            else ctx.lineTo(bowPos.x - 15, bowPos.y);
-            ctx.lineTo(bowPos.x - 15, bowPos.y + 65);
+            ctx.moveTo(-15, -65);
+            ctx.lineTo(-15, 65);
             ctx.stroke();
             ctx.restore();
 
-            if(!isDragging && gameActive) {
-                drawArrowIcon(bowPos.x, bowPos.y, 0, currentArrow.isApple, currentArrow.isGiant, currentArrow.isGiant ? 240 : 95);
+            // 대기 중인 활시위 위 화살 렌더링
+            if(gameActive) {
+                drawArrowIcon(bowPos.x, bowPos.y, currentAngle, currentArrow.isApple, currentArrow.isGiant, currentArrow.isGiant ? 240 : 95);
             }
 
-            if (isDragging && arrowTrajectoryVisible && gameActive) {
-                let tVx = (dragStart.x - dragEnd.x) * 0.25;
+            // [수정] 상시 실시간 조준점 가이드선 그리기
+            if (arrowTrajectoryVisible && gameActive) {
+                let tVx = Math.cos(currentAngle) * shootPower;
                 if (tVx > 0) { 
                     ctx.save();
                     if(currentArrow.isGiant) {
@@ -770,7 +753,7 @@ game_html = """
                     ctx.beginPath();
 
                     let tX = bowPos.x; let tY = bowPos.y;
-                    let tVy = (dragStart.y - dragEnd.y) * 0.25;
+                    let tVy = Math.sin(currentAngle) * shootPower;
 
                     ctx.moveTo(tX, tY);
                     for (let i = 0; i < 60; i++) {
@@ -779,9 +762,6 @@ game_html = """
                         if(tX > canvas.width || tY > canvas.height || tY < 0) break;
                     }
                     ctx.stroke(); ctx.restore();
-
-                    let dragAngle = Math.atan2(dragStart.y - dragEnd.y, dragStart.x - dragEnd.x);
-                    drawArrowIcon(dragEnd.x, dragEnd.y, dragAngle, currentArrow.isApple, currentArrow.isGiant, currentArrow.isGiant ? 240 : 95);
                 }
             }
 
@@ -923,5 +903,4 @@ game_html = """
 </html>
 """
 
-# 16:9 비율 컨테이너 높이에 맞춰 스트림릿 컴포넌트 뷰포트 여유 높이 지정
 components.html(game_html, height=720, scrolling=False)
