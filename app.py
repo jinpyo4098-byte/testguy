@@ -268,7 +268,7 @@ game_html = """
             </div>
         </div>
 
-        <div id="buff-alert" class="hidden">🔥 과녁 증폭 및 감속 활성화! 🔥</div>
+        <div id="buff-alert" class="hidden">🔥 기가 과녁 증폭 및 감속 활성화! 🔥</div>
 
         <div id="combo-wrapper" class="hidden">
             <p class="combo-text" id="combo-disp">5 COMBO</p>
@@ -291,14 +291,13 @@ game_html = """
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
-        // 활 및 조준점 변수 전역 선언
-        const bowPos = { x: 250, y: window.innerHeight / 2 }; // [수정] 마우스 공간 확보를 위해 왼쪽 마진을 100 -> 250으로 오른쪽 이동
+        const bowPos = { x: 250, y: window.innerHeight / 2 }; 
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
-            bowPos.x = 250; // [수정] 화면 리사이즈 시에도 활의 x축 위치를 250으로 고정
+            bowPos.x = 250; 
             bowPos.y = canvas.height / 2;
             target.x = canvas.width - 150; 
         }
@@ -334,11 +333,12 @@ game_html = """
             destroyed: false
         };
 
+        // [크기 키움] 과녁의 기본 베이스 스케일을 85 -> 115로 대폭 확대
         let target = {
             x: window.innerWidth - 150,
             y: window.innerHeight / 2,
-            baseRadiusD: 85, 
-            radiusD: 85, radiusC: 62, radiusB: 38, radiusA: 15,  
+            baseRadiusD: 115, 
+            radiusD: 115, radiusC: 84, radiusB: 51, radiusA: 20,  
             baseSpeed: 2.5,
             speed: 2.5,
             dir: 1,
@@ -360,9 +360,10 @@ game_html = """
         let dragEnd = { x: 0, y: 0 };
         
         let activeArrows = [];
-        let currentArrow = { isApple: false };
-        let appleTimer = 0;
-        let appleTrajectoryVisible = true;
+        // 화살 종류 구조: { isApple: false, isGiant: false }
+        let currentArrow = { isApple: false, isGiant: false };
+        let arrowTrajectoryVisible = true;
+        let blinkTimer = 0;
 
         document.getElementById('main-high-disp').innerText = highScore;
         window.addEventListener('resize', resizeCanvas);
@@ -382,7 +383,6 @@ game_html = """
             generateStars(); 
         }
 
-        // 금성 오타 바인딩 예외 처리 보완
         function withPlanet(key) { selectPlanet(key); }
 
         function startGame() {
@@ -456,18 +456,19 @@ game_html = """
             meteor.active = true;
         }
 
+        // [크기 키움] 능력(버프) 발동 시 배율 증가 조정 (기존 1.5배 -> 1.6배로 가독성 및 영역 극대화)
         function resetTargetSpecification(buffActive) {
             if(buffActive) {
-                target.radiusD = target.baseRadiusD * 1.5; 
-                target.radiusC = 62 * 1.5;
-                target.radiusB = 38 * 1.5;
-                target.radiusA = 15 * 1.5;
+                target.radiusD = target.baseRadiusD * 1.6; 
+                target.radiusC = 84 * 1.6;
+                target.radiusB = 51 * 1.6;
+                target.radiusA = 20 * 1.6;
                 target.speed = target.baseSpeed * 0.4; 
             } else {
                 target.radiusD = target.baseRadiusD;
-                target.radiusC = 62;
-                target.radiusB = 38;
-                target.radiusA = 15;
+                target.radiusC = 84;
+                target.radiusB = 51;
+                target.radiusA = 20;
                 target.speed = target.baseSpeed;
             }
         }
@@ -526,10 +527,18 @@ game_html = """
             scoreTexts = [];
         }
 
+        // [확률 추가] 사과 화살(6%)보다 2배 더 적은 확률인 3% 확률로 겁나큰 화살 생성
         function rollNextArrow() {
-            currentArrow = { isApple: Math.random() < 0.06 };
-            appleTimer = 0;
-            appleTrajectoryVisible = true;
+            let rand = Math.random();
+            if (rand < 0.03) { // 3% 확률로 겁나큰 화살
+                currentArrow = { isApple: false, isGiant: true };
+            } else if (rand < 0.09) { // 6% 확률로 사과 화살 (0.03 ~ 0.09)
+                currentArrow = { isApple: true, isGiant: false };
+            } else {
+                currentArrow = { isApple: false, isGiant: false };
+            }
+            blinkTimer = 0;
+            arrowTrajectoryVisible = true;
         }
         rollNextArrow();
 
@@ -561,7 +570,8 @@ game_html = """
         window.addEventListener('mousedown', (e) => {
             if(!gameActive) return;
             const mousePos = getMousePos(e);
-            if(Math.hypot(mousePos.x - bowPos.x, mousePos.y - bowPos.y) < 80) {
+            // 활 크기가 커짐에 따라 조작 판정선 범위도 80 -> 100으로 상향
+            if(Math.hypot(mousePos.x - bowPos.x, mousePos.y - bowPos.y) < 100) {
                 isDragging = true;
                 dragStart = { x: bowPos.x, y: bowPos.y };
                 dragEnd = { x: mousePos.x, y: mousePos.y };
@@ -587,11 +597,14 @@ game_html = """
             const vy = dy * speedScale;
 
             if(vx > 0) {
+                // 겁나큰 화살일 경우 화살 크기 스케일을 95 -> 240으로 증폭
+                let aWidth = currentArrow.isGiant ? 240 : 95;
                 activeArrows.push({
                     x: bowPos.x, y: bowPos.y,
                     vx: vx, vy: vy,
                     isApple: currentArrow.isApple,
-                    width: 95, height: 5,
+                    isGiant: currentArrow.isGiant,
+                    width: aWidth, height: 5,
                     collided: false,
                     handled: false 
                 });
@@ -631,10 +644,10 @@ game_html = """
                     }
                 }
 
-                if(currentArrow.isApple) {
-                    appleTimer++;
-                    if(appleTimer % 45 === 0) {
-                        appleTrajectoryVisible = !appleTrajectoryVisible;
+                if(currentArrow.isApple || currentArrow.isGiant) {
+                    blinkTimer++;
+                    if(blinkTimer % 45 === 0) {
+                        arrowTrajectoryVisible = !arrowTrajectoryVisible;
                     }
                 }
 
@@ -711,34 +724,41 @@ game_html = """
                 ctx.restore();
             }
 
-            // 활 그리기
+            // [크기 키움] 활 크기 증가 (반지름 48 -> 65, 오프셋 보정)
             ctx.save();
             ctx.strokeStyle = isBuffed ? "#ff0055" : "#00d2ff";
-            ctx.lineWidth = 5; 
+            ctx.lineWidth = 6; 
             ctx.beginPath();
-            ctx.arc(bowPos.x - 12, bowPos.y, 48, -Math.PI/2, Math.PI/2); 
+            ctx.arc(bowPos.x - 15, bowPos.y, 65, -Math.PI/2, Math.PI/2); 
             ctx.stroke();
             
             ctx.strokeStyle = "rgba(255,255,255,0.5)";
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(bowPos.x - 12, bowPos.y - 48);
+            ctx.moveTo(bowPos.x - 15, bowPos.y - 65);
             if(isDragging) ctx.lineTo(dragEnd.x, dragEnd.y);
-            else ctx.lineTo(bowPos.x - 12, bowPos.y);
-            ctx.lineTo(bowPos.x - 12, bowPos.y + 48);
+            else ctx.lineTo(bowPos.x - 15, bowPos.y);
+            ctx.lineTo(bowPos.x - 15, bowPos.y + 65);
             ctx.stroke();
             ctx.restore();
 
             if(!isDragging && gameActive) {
-                drawArrowIcon(bowPos.x, bowPos.y, 0, currentArrow.isApple);
+                drawArrowIcon(bowPos.x, bowPos.y, 0, currentArrow.isApple, currentArrow.isGiant, currentArrow.isGiant ? 240 : 95);
             }
 
-            if (isDragging && appleTrajectoryVisible && gameActive) {
+            if (isDragging && arrowTrajectoryVisible && gameActive) {
                 let tVx = (dragStart.x - dragEnd.x) * 0.25;
                 if (tVx > 0) { 
                     ctx.save();
-                    ctx.strokeStyle = currentArrow.isApple ? "#af0404" : "rgba(0, 210, 255, 0.5)";
-                    ctx.lineWidth = 2.5; ctx.setLineDash([5, 5]);
+                    // 조준선 색상 설정 (기가 화살은 굵은 황금빛)
+                    if(currentArrow.isGiant) {
+                        ctx.strokeStyle = "rgba(255, 204, 0, 0.7)";
+                        ctx.lineWidth = 5;
+                    } else {
+                        ctx.strokeStyle = currentArrow.isApple ? "#af0404" : "rgba(0, 210, 255, 0.5)";
+                        ctx.lineWidth = 2.5;
+                    }
+                    ctx.setLineDash([5, 5]);
                     ctx.beginPath();
 
                     let tX = bowPos.x; let tY = bowPos.y;
@@ -753,7 +773,7 @@ game_html = """
                     ctx.stroke(); ctx.restore();
 
                     let dragAngle = Math.atan2(dragStart.y - dragEnd.y, dragStart.x - dragEnd.x);
-                    drawArrowIcon(dragEnd.x, dragEnd.y, dragAngle, currentArrow.isApple);
+                    drawArrowIcon(dragEnd.x, dragEnd.y, dragAngle, currentArrow.isApple, currentArrow.isGiant, currentArrow.isGiant ? 240 : 95);
                 }
             }
 
@@ -765,12 +785,12 @@ game_html = """
                 arrow.vy += currentGravity;
 
                 let arrowAngle = Math.atan2(arrow.vy, arrow.vx);
-                drawArrowIcon(arrow.x, arrow.y, arrowAngle, arrow.isApple, arrow.width);
+                drawArrowIcon(arrow.x, arrow.y, arrowAngle, arrow.isApple, arrow.isGiant, arrow.width);
 
                 let arrowTipX = arrow.x + Math.cos(arrowAngle) * (arrow.width / 2);
                 let arrowTipY = arrow.y + Math.sin(arrowAngle) * (arrow.width / 2);
 
-                if (arrow.x > canvas.width + 50 || arrow.y > canvas.height + 50 || arrow.y < -50) {
+                if (arrow.x > canvas.width + 150 || arrow.y > canvas.height + 150 || arrow.y < -150) {
                     if(!arrow.handled) {
                         combo = 0; document.getElementById('combo-wrapper').classList.add('hidden');
                     }
@@ -780,12 +800,12 @@ game_html = """
 
                 if(meteor.active) {
                     let distToMeteor = Math.hypot(arrowTipX - meteor.x, arrowTipY - meteor.y);
-                    if(distToMeteor <= meteor.radius + 10) {
+                    if(distToMeteor <= meteor.radius + (arrow.isGiant ? 30 : 10)) {
                         meteor.active = false;
                         meteor.destroyed = true;
                         activeArrows.splice(i, 1); 
 
-                        createExplosion(meteor.x, meteor.y, "#ffcc00", 40);
+                        createExplosion(meteor.x, meteor.y, "#ffcc00", 50);
                         createScoreText(meteor.x, meteor.y, "AWAKENING!!", "#ffcc00");
                         
                         activateAbilityBuff();
@@ -793,7 +813,7 @@ game_html = """
                     }
                 }
 
-                if (target.visible && arrowTipX >= frontX && arrowTipX <= backX + 15 && arrow.vx > 0) {
+                if (target.visible && arrowTipX >= frontX && arrowTipX <= backX + (arrow.isGiant ? 40 : 15) && arrow.vx > 0) {
                     let dy = Math.abs(arrowTipY - target.y);
 
                     if (dy <= target.radiusD) {
@@ -816,15 +836,19 @@ game_html = """
                         else if (dy <= target.radiusC) { earnedPoints = 2;  hColor = targetColor; }
                         else { earnedPoints = 1;  hColor = "#e2e8f0"; }
 
+                        // 점수 증폭 계산 (사과 화살 2배, 겁나큰 화살 3배)
                         if(arrow.isApple) { earnedPoints *= 2; hColor = "#ff2222"; }
+                        else if(arrow.isGiant) { earnedPoints *= 3; hColor = "#ffcc00"; }
 
                         let totalEarned = earnedPoints + Math.floor(combo / 3);
                         score += totalEarned;
                         document.getElementById('score-disp').innerText = score;
 
                         createScoreText(arrowTipX - 25, arrowTipY - 15, `+${totalEarned}`, hColor);
-                        shakeIntensity = 7; 
-                        createExplosion(arrowTipX, arrowTipY, hColor, 20);
+                        
+                        // 기가 화살 피격 시 화면 진동 및 폭발 극대화
+                        shakeIntensity = arrow.isGiant ? 22 : 7; 
+                        createExplosion(arrowTipX, arrowTipY, hColor, arrow.isGiant ? 50 : 20);
 
                         activeArrows.splice(i, 1); 
                         continue;
@@ -853,24 +877,37 @@ game_html = """
             gameInterval = requestAnimationFrame(update);
         }
 
-        function drawArrowIcon(x, y, angle, isApple, customWidth) {
+        function drawArrowIcon(x, y, angle, isApple, isGiant, customWidth) {
             ctx.save();
             ctx.translate(x, y); ctx.rotate(angle);
             let width = customWidth || 95; 
             
-            ctx.strokeStyle = isApple ? "#ff3333" : "#e2e8f0";
-            ctx.lineWidth = isApple ? 5.5 : 4.5; 
-            ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(width/2, 0); ctx.stroke();
+            // 기가 화살, 사과 화살, 일반 화살 디자인 분기
+            if (isGiant) {
+                ctx.strokeStyle = "#ffcc00";
+                ctx.lineWidth = 11; 
+                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(width/2, 0); ctx.stroke();
 
-            ctx.fillStyle = isApple ? "#ff0000" : "#cbd5e1";
-            ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2 - 15, -8); ctx.lineTo(width/2 - 15, 8); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = "#ff3e3e";
+                ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2 - 35, -20); ctx.lineTo(width/2 - 35, 20); ctx.closePath(); ctx.fill();
 
-            ctx.fillStyle = isApple ? "#ffcc00" : "#3182ce";
-            ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(-width/2 - 8, -10); ctx.lineTo(-width/2 + 5, -10); ctx.lineTo(-width/2 + 12, 0); ctx.lineTo(-width/2 + 5, 10); ctx.lineTo(-width/2 - 8, 10); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = "#e3a857";
+                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(-width/2 - 20, -22); ctx.lineTo(-width/2 + 10, -22); ctx.lineTo(-width/2 + 25, 0); ctx.lineTo(-width/2 + 10, 22); ctx.lineTo(-width/2 - 20, 22); ctx.closePath(); ctx.fill();
+            } else {
+                ctx.strokeStyle = isApple ? "#ff3333" : "#e2e8f0";
+                ctx.lineWidth = isApple ? 5.5 : 4.5; 
+                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(width/2, 0); ctx.stroke();
 
-            if(isApple) {
-                ctx.fillStyle = "#fa5252"; ctx.beginPath(); ctx.arc(0, -4, 11, 0, Math.PI*2); ctx.fill();
-                ctx.strokeStyle = "#868e96"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(3, -19, 6, -17); ctx.stroke();
+                ctx.fillStyle = isApple ? "#ff0000" : "#cbd5e1";
+                ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2 - 15, -8); ctx.lineTo(width/2 - 15, 8); ctx.closePath(); ctx.fill();
+
+                ctx.fillStyle = isApple ? "#ffcc00" : "#3182ce";
+                ctx.beginPath(); ctx.moveTo(-width/2, 0); ctx.lineTo(-width/2 - 8, -10); ctx.lineTo(-width/2 + 5, -10); ctx.lineTo(-width/2 + 12, 0); ctx.lineTo(-width/2 + 5, 10); ctx.lineTo(-width/2 - 8, 10); ctx.closePath(); ctx.fill();
+
+                if(isApple) {
+                    ctx.fillStyle = "#fa5252"; ctx.beginPath(); ctx.arc(0, -4, 11, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = "#868e96"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(3, -19, 6, -17); ctx.stroke();
+                }
             }
             ctx.restore();
         }
